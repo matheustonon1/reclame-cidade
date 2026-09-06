@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -34,6 +36,10 @@ export default async function LoginPage({
           Entrar
         </button>
       </form>
+
+      <Link href="/cadastro" className="text-sm underline">
+        Ainda não tem conta? Cadastre-se
+      </Link>
     </main>
   );
 }
