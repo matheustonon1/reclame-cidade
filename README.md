@@ -98,7 +98,7 @@ Abra o `.env` e preencha:
 ```env
 DATABASE_URL="mysql://root:root@localhost:3306/reclame_cidade"
 AUTH_SECRET="cole-aqui-uma-chave-gerada"
-OPENAI_API_KEY="sua-chave-da-api"
+GEMINI_API_KEY="sua-chave-da-api"
 ```
 
 Para gerar o `AUTH_SECRET`:

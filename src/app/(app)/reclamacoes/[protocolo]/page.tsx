@@ -33,6 +33,17 @@ export default async function ReclamacaoPage({
         {reclamacao.endereco}
       </p>
       <p>{reclamacao.descricao}</p>
+      {reclamacao.status === "REJEITADA" && reclamacao.motivoRejeicao && (
+        <p className="text-sm text-red-600">
+          Motivo da rejeição: {reclamacao.motivoRejeicao}
+        </p>
+      )}
+      {reclamacao.status === "AGUARDANDO_REVISAO" && (
+        <p className="text-sm text-amber-600">
+          Esta reclamação foi encaminhada para revisão humana antes da
+          publicação.
+        </p>
+      )}
     </main>
   );
 }
