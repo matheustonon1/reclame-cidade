@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// Reclame Cidade - modelo de dados
+// Prisma 6 | MySQL 8.4
+// ---------------------------------------------------------------------------
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -5,4 +10,489 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+// ===========================================================================
+// ENUMS
+// ===========================================================================
+
+enum Papel {
+  CIDADAO
+  MODERADOR
+  ORGAO
+  ADMIN
+}
+
+enum NivelVerificacao {
+  NAO_VERIFICADO
+  EMAIL
+  DOCUMENTO
+}
+
+enum StatusReclamacao {
+  RASCUNHO
+  EM_MODERACAO
+  AGUARDANDO_REVISAO
+  PUBLICADA
+  REJEITADA
+  EM_ANDAMENTO
+  RESOLVIDA
+  ARQUIVADA
+}
+
+enum StatusModeracao {
+  PENDENTE
+  APROVADO
+  REPROVADO
+  REVISAO_HUMANA
+}
+
+enum DecisaoModeracao {
+  APROVAR
+  REPROVAR
+  ENCAMINHAR_REVISAO
+}
+
+enum TipoAlvo {
+  RECLAMACAO
+  MIDIA
+  COMENTARIO
+}
+
+enum TipoMidia {
+  IMAGEM
+  DOCUMENTO
+}
+
+enum MotivoDenuncia {
+  OFENSIVO
+  SPAM
+  DESINFORMACAO
+  FORA_DE_ESCOPO
+  DADOS_PESSOAIS
+  DUPLICADA
+  OUTRO
+}
+
+enum StatusDenuncia {
+  ABERTA
+  PROCEDENTE
+  IMPROCEDENTE
+}
+
+enum TipoNotificacao {
+  RECLAMACAO_PUBLICADA
+  RECLAMACAO_REJEITADA
+  RESPOSTA_OFICIAL
+  MUDANCA_STATUS
+  NOVO_COMENTARIO
+  PEDIDO_AVALIACAO
+}
+
+// ===========================================================================
+// AUTENTICAÇÃO (Auth.js / NextAuth)
+// Os nomes dos models User, Account, Session e VerificationToken são exigidos
+// pelo adapter do Prisma e não devem ser traduzidos.
+// ===========================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+
+  senhaHash String? // login por credenciais
+  cpfHash   String? @unique // apenas hash, nunca o CPF em texto
+  telefone  String?
+
+  papel            Papel            @default(CIDADAO)
+  nivelVerificacao NivelVerificacao @default(NAO_VERIFICADO)
+
+  cidadeId String?
+  cidade   Cidade? @relation(fields: [cidadeId], references: [id])
+  bairroId String?
+  bairro   Bairro? @relation(fields: [bairroId], references: [id])
+
+  orgaoId String?
+  orgao   Orgao?  @relation(fields: [orgaoId], references: [id])
+
+  ativo     Boolean   @default(true)
+  banidoAte DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  reclamacoes         Reclamacao[]
+  comentarios         Comentario[]
+  confirmacoes        Confirmacao[]
+  avaliacoes          Avaliacao[]
+  respostasOficiais   RespostaOficial[]
+  denunciasFeitas     Denuncia[]        @relation("DenunciasFeitas")
+  denunciasAnalisadas Denuncia[]        @relation("DenunciasAnalisadas")
+  moderacoesRevisadas LogModeracao[]    @relation("ModeracoesRevisadas")
+  notificacoes        Notificacao[]
+
+  @@index([cidadeId])
+  @@index([papel])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ===========================================================================
+// GEOGRAFIA
+// Populada a partir da API de municípios do IBGE (ver prisma/seed.ts)
+// ===========================================================================
+
+model Estado {
+  id   String @id @default(cuid())
+  nome String
+  uf   String @unique @db.VarChar(2)
+
+  cidades Cidade[]
+}
+
+model Cidade {
+  id         String @id @default(cuid())
+  nome       String
+  slug       String @unique
+  codigoIbge String @unique
+  estadoId   String
+  estado     Estado @relation(fields: [estadoId], references: [id])
+
+  bairros     Bairro[]
+  usuarios    User[]
+  reclamacoes Reclamacao[]
+  orgaos      Orgao[]
+
+  @@index([estadoId])
+  @@index([nome])
+}
+
+model Bairro {
+  id       String @id @default(cuid())
+  nome     String
+  cidadeId String
+  cidade   Cidade @relation(fields: [cidadeId], references: [id])
+
+  usuarios    User[]
+  reclamacoes Reclamacao[]
+
+  @@unique([cidadeId, nome])
+  @@index([cidadeId])
+}
+
+// ===========================================================================
+// TAXONOMIA E ÓRGÃOS
+// ===========================================================================
+
+model Categoria {
+  id        String  @id @default(cuid())
+  nome      String  @unique
+  slug      String  @unique
+  descricao String? @db.Text
+  icone     String?
+  ativa     Boolean @default(true)
+  ordem     Int     @default(0)
+
+  reclamacoes Reclamacao[]
+}
+
+model Orgao {
+  id       String  @id @default(cuid())
+  nome     String
+  sigla    String?
+  email    String?
+  cidadeId String
+  cidade   Cidade  @relation(fields: [cidadeId], references: [id])
+  ativo    Boolean @default(true)
+
+  responsaveis User[]
+  respostas    RespostaOficial[]
+
+  @@index([cidadeId])
+}
+
+// ===========================================================================
+// RECLAMAÇÕES
+// ===========================================================================
+
+model Reclamacao {
+  id        String @id @default(cuid())
+  protocolo String @unique // gerado na aplicação, ex: RC-2026-0001234
+
+  titulo    String @db.VarChar(180)
+  descricao String @db.Text
+
+  autorId String
+  autor   User    @relation(fields: [autorId], references: [id])
+  anonima Boolean @default(false) // oculta o autor na exibição pública
+
+  cidadeId String
+  cidade   Cidade  @relation(fields: [cidadeId], references: [id])
+  bairroId String?
+  bairro   Bairro? @relation(fields: [bairroId], references: [id])
+
+  endereco   String  @db.VarChar(255) // logradouro e número
+  referencia String? @db.VarChar(255) // ponto de referência
+  cep        String? @db.VarChar(9)
+
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  status         StatusReclamacao @default(EM_MODERACAO)
+  scoreModeracao Float?
+  motivoRejeicao String?          @db.Text
+  emRecurso      Boolean          @default(false)
+
+  visualizacoes Int @default(0)
+
+  publicadaEm DateTime?
+  resolvidaEm DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  midias       Midia[]
+  comentarios  Comentario[]
+  confirmacoes Confirmacao[]
+  respostas    RespostaOficial[]
+  avaliacao    Avaliacao?
+  notificacoes Notificacao[]
+
+  @@index([cidadeId, status])
+  @@index([categoriaId])
+  @@index([autorId])
+  @@index([status, publicadaEm])
+}
+
+model Midia {
+  id           String     @id @default(cuid())
+  reclamacaoId String
+  reclamacao   Reclamacao @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+
+  url        String    @db.VarChar(500)
+  urlTratada String?   @db.VarChar(500) // versão com rostos e placas desfocados
+  tipo       TipoMidia @default(IMAGEM)
+
+  nomeArquivo  String
+  mimeType     String
+  tamanhoBytes Int
+  larguraPx    Int?
+  alturaPx     Int?
+
+  phash       String?   @db.VarChar(64) // hash perceptual, detecta repostagem
+  exifJson    String?   @db.Text // metadados originais (data, GPS)
+  capturadaEm DateTime?
+
+  statusModeracao StatusModeracao @default(PENDENTE)
+  ordem           Int             @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([reclamacaoId])
+  @@index([phash])
+}
+
+// ===========================================================================
+// MODERAÇÃO POR IA
+// Registro de auditoria. É desta tabela que saem os dados de avaliação
+// do pipeline (precisão, recall, taxa de falso positivo).
+// ===========================================================================
+
+model LogModeracao {
+  id       String   @id @default(cuid())
+  alvoTipo TipoAlvo
+  alvoId   String
+
+  provedor     String // ex: openai, google, anthropic
+  modelo       String
+  versaoPrompt String @db.VarChar(32)
+
+  decisao    DecisaoModeracao
+  scoreGeral Float
+
+  // scores por eixo, extraídos do JSON para permitir consulta
+  scoreOfensivo        Float?
+  scoreSpam            Float?
+  scoreDadosPessoais   Float?
+  scoreForaEscopo      Float?
+  scoreDesinformacao   Float?
+  coerenciaTextoImagem Float?
+
+  justificativa String? @db.Text
+  resultadoJson String  @db.Text // retorno bruto do modelo
+
+  latenciaMs    Int?
+  tokensEntrada Int?
+  tokensSaida   Int?
+
+  // revisão humana, quando houve
+  revisadoPorId String?
+  revisadoPor   User?             @relation("ModeracoesRevisadas", fields: [revisadoPorId], references: [id])
+  decisaoFinal  DecisaoModeracao?
+  revisadoEm    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([alvoTipo, alvoId])
+  @@index([decisao])
+  @@index([createdAt])
+}
+
+// ===========================================================================
+// INTERAÇÃO
+// ===========================================================================
+
+model Comentario {
+  id           String     @id @default(cuid())
+  reclamacaoId String
+  reclamacao   Reclamacao @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+  autorId      String
+  autor        User       @relation(fields: [autorId], references: [id])
+
+  texto String @db.Text
+
+  paiId     String?
+  pai       Comentario?  @relation("Respostas", fields: [paiId], references: [id])
+  respostas Comentario[] @relation("Respostas")
+
+  statusModeracao StatusModeracao @default(PENDENTE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reclamacaoId])
+  @@index([autorId])
+}
+
+// "Também sofro com isso" - sinal de corroboração comunitária.
+// Confirmações independentes de moradores verificados elevam a
+// confiabilidade da denúncia sem exigir verificação factual por IA.
+model Confirmacao {
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reclamacaoId String
+  reclamacao   Reclamacao @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, reclamacaoId])
+  @@index([reclamacaoId])
+}
+
+model RespostaOficial {
+  id           String     @id @default(cuid())
+  reclamacaoId String
+  reclamacao   Reclamacao @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+
+  autorId String
+  autor   User   @relation(fields: [autorId], references: [id])
+  orgaoId String
+  orgao   Orgao  @relation(fields: [orgaoId], references: [id])
+
+  texto         String            @db.Text
+  novoStatus    StatusReclamacao?
+  prazoEstimado DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([reclamacaoId])
+  @@index([orgaoId])
+}
+
+// Avaliação do cidadão sobre a resolução. Alimenta o índice de
+// resolutividade por cidade e por órgão.
+model Avaliacao {
+  id           String     @id @default(cuid())
+  reclamacaoId String     @unique
+  reclamacao   Reclamacao @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+  autorId      String
+  autor        User       @relation(fields: [autorId], references: [id])
+
+  nota       Int // 1 a 5
+  resolvido  Boolean
+  comentario String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([autorId])
+}
+
+model Denuncia {
+  id       String   @id @default(cuid())
+  alvoTipo TipoAlvo
+  alvoId   String
+
+  denuncianteId String
+  denunciante   User   @relation("DenunciasFeitas", fields: [denuncianteId], references: [id])
+
+  motivo    MotivoDenuncia
+  descricao String?        @db.Text
+
+  status         StatusDenuncia @default(ABERTA)
+  analisadoPorId String?
+  analisadoPor   User?          @relation("DenunciasAnalisadas", fields: [analisadoPorId], references: [id])
+  analisadoEm    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([alvoTipo, alvoId])
+  @@index([status])
+}
+
+model Notificacao {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipo     TipoNotificacao
+  titulo   String
+  mensagem String          @db.Text
+
+  reclamacaoId String?
+  reclamacao   Reclamacao? @relation(fields: [reclamacaoId], references: [id], onDelete: Cascade)
+
+  lida      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, lida])
 }
