@@ -33,6 +33,10 @@ export default async function PainelPage() {
         Nova reclamação
       </Link>
 
+      <Link href="/reclamacoes" className="text-sm underline">
+        Ver reclamações públicas
+      </Link>
+
       <div className="flex flex-col gap-2">
         <h2 className="font-semibold">Minhas reclamações</h2>
         {reclamacoes.length === 0 && (

@@ -1,26 +1,47 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+import { alternarConfirmacao } from "./actions";
+
 export default async function ReclamacaoPage({
   params,
 }: PageProps<"/reclamacoes/[protocolo]">) {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
-
   const { protocolo } = await params;
 
   const reclamacao = await prisma.reclamacao.findUnique({
     where: { protocolo },
-    include: { categoria: true, cidade: true },
+    include: {
+      categoria: true,
+      cidade: true,
+      _count: { select: { confirmacoes: true } },
+    },
   });
 
-  if (!reclamacao || reclamacao.autorId !== session.user.id) {
+  const session = await auth();
+  const ehAutor = reclamacao?.autorId === session?.user?.id;
+  const publicaOuAutor =
+    reclamacao?.status === "PUBLICADA" ||
+    reclamacao?.status === "EM_ANDAMENTO" ||
+    reclamacao?.status === "RESOLVIDA" ||
+    reclamacao?.status === "ARQUIVADA" ||
+    ehAutor;
+
+  if (!reclamacao || !publicaOuAutor) {
     notFound();
   }
+
+  const jaConfirmou =
+    !!session?.user &&
+    (await prisma.confirmacao.findUnique({
+      where: {
+        userId_reclamacaoId: {
+          userId: session.user.id,
+          reclamacaoId: reclamacao.id,
+        },
+      },
+    })) !== null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-3 p-8">
@@ -44,6 +65,23 @@ export default async function ReclamacaoPage({
           publicação.
         </p>
       )}
+      {!ehAutor && session?.user && (
+        <form
+          action={alternarConfirmacao.bind(null, reclamacao.id, protocolo)}
+        >
+          <button
+            type="submit"
+            className="rounded border px-3 py-2 text-sm"
+          >
+            {jaConfirmou
+              ? "✓ Também sofro com isso"
+              : "Também sofro com isso"}
+          </button>
+        </form>
+      )}
+      <p className="text-sm text-gray-500">
+        {reclamacao._count.confirmacoes} pessoa(s) confirmaram este problema.
+      </p>
     </main>
   );
 }
