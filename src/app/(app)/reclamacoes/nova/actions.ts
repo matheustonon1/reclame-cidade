@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { moderarReclamacao } from "@/lib/moderacao";
 import { gerarProtocolo } from "@/lib/protocolo";
 
 import { NovaReclamacaoSchema, type NovaReclamacaoFormState } from "./definitions";
@@ -49,6 +50,12 @@ export async function criarReclamacao(
       cep: cep || null,
     },
   });
+
+  try {
+    await moderarReclamacao(reclamacao.id);
+  } catch (erro) {
+    console.error("Falha na moderação automática:", erro);
+  }
 
   redirect(`/reclamacoes/${reclamacao.protocolo}`);
 }
