@@ -44,6 +44,8 @@ A validação factual é delegada a um mecanismo de **corroboração comunitári
 | Moderação | API de LLM multimodal (Gemini) |
 | Armazenamento de imagem | Vercel Blob |
 | Processamento de imagem | sharp (redimensionamento/desfoque), blockhash-core (hash perceptual), exifr (metadados EXIF) |
+| Antifake no cadastro | Cloudflare Turnstile (opcional) |
+| Testes | Vitest |
 | Infraestrutura local | Docker Compose |
 
 As versões do Prisma estão fixadas propositalmente. A CLI passou por reestruturação em versões posteriores, com mudança de comandos e de formato de configuração. Fixar a versão garante reprodutibilidade do ambiente ao longo do desenvolvimento e na avaliação do trabalho.
@@ -121,6 +123,12 @@ funciona normalmente; só o envio de fotos falha.
 verificação de conta) — sem provedor de e-mail configurado, esse link
 aparece no log do servidor em vez de ser enviado de verdade.
 
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY` são opcionais
+(proteção antifake no cadastro) — crie uma chave grátis em
+[dash.cloudflare.com](https://dash.cloudflare.com) → Turnstile → Add
+site. Sem essas variáveis, o cadastro funciona normalmente, só sem
+verificação de bot.
+
 O arquivo `.env` está no `.gitignore` e **nunca deve ser versionado**.
 
 ### 4. Subir o banco de dados
@@ -174,6 +182,7 @@ npm run dev      # ambiente de desenvolvimento
 npm run build    # build de produção
 npm run start    # executa o build
 npm run lint     # verificação de código
+npm test         # roda os testes automatizados (Vitest)
 ```
 
 ### Banco de dados
@@ -217,10 +226,11 @@ reclame-cidade/
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/          # login, cadastro e verificação de e-mail
-│   │   ├── (app)/           # área autenticada (painel, conta, reclamações)
-│   │   ├── (admin)/         # painel de moderação humana
+│   │   ├── (app)/           # área autenticada (painel, conta, reclamações, órgão)
+│   │   ├── (admin)/         # moderação humana, histórico e fila de denúncias
 │   │   ├── cidades/         # perfil público por cidade (ranking, índice de resolução)
 │   │   ├── reclamacoes/     # feed público
+│   │   ├── termos/          # Termos de Uso e Política de Privacidade
 │   │   └── api/             # rotas de API (busca de cidade, consulta de CEP)
 │   ├── components/          # UI compartilhada (header, menus, badges, combobox de cidade)
 │   ├── lib/
@@ -231,7 +241,10 @@ reclame-cidade/
 │   │   ├── storage.ts       # upload para o Vercel Blob
 │   │   ├── cpf.ts           # validação e hash do CPF
 │   │   ├── email.ts         # token e envio do e-mail de verificação
-│   │   └── notificacoes.ts  # criação de notificações in-app
+│   │   ├── notificacoes.ts  # criação de notificações in-app
+│   │   ├── identificador.ts # busca de usuário por e-mail ou CPF
+│   │   ├── verificacao.ts   # regra de e-mail obrigatório p/ confirmar e denunciar
+│   │   └── turnstile.ts     # verificação antifake do Cloudflare Turnstile
 │   └── types/
 ├── public/
 ├── docker-compose.yml
@@ -328,11 +341,23 @@ O repositório inclui `.vscode/extensions.json` com as extensões sugeridas. O V
 
 O sistema trata dados pessoais e observa a Lei Geral de Proteção de Dados (Lei nº 13.709/2018):
 
+- Consentimento explícito aos Termos de Uso e à Política de Privacidade no cadastro (`/termos`)
 - Coleta mínima de dados no cadastro
 - Documentos de identificação, quando utilizados na verificação, são armazenados apenas em forma de hash
 - Imagens submetidas passam por detecção de rostos e placas veiculares, com desfoque automático
-- Edição de dados cadastrais e troca de senha disponíveis em "Minha conta"; exclusão de conta ainda **não** implementada
+- Edição de dados cadastrais e troca de senha disponíveis em "Minha conta"
+- Exclusão de conta disponível ao usuário — anonimiza os dados pessoais; reclamações já publicadas são mantidas como registro de interesse público, sem identificação do autor
 - Registros de moderação mantidos para fins de auditoria e recurso
+
+### Integridade de conta e antifake
+
+Como a plataforma lida com reclamações sobre a cidade — incluindo, indiretamente, sobre a gestão pública —, ela é um alvo natural de manipulação coordenada (contas falsas para inflar ou forjar corroboração comunitária). As medidas atuais são de integridade de conta/comportamento, não de moderação de conteúdo político:
+
+- CPF único por conta (hash) e Cloudflare Turnstile no cadastro (opcional)
+- Limite de contas criadas por IP e de reclamações/denúncias por usuário
+- E-mail verificado obrigatório para confirmar ("também sofro com isso") e denunciar, com contas anteriores à regra isentas
+- Rajada de confirmações fora do padrão gera alerta para moderador/admin — nunca ação automática; um problema real pode legitimamente viralizar, então a decisão final é sempre humana
+- Denúncia de conteúdo publicado (`/denuncias`) e banimento de usuário (restrito a ADMIN) como consequência
 
 ---
 
