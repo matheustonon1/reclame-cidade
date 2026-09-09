@@ -3,21 +3,23 @@
 import { useActionState } from "react";
 import Link from "next/link";
 
+import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
+
 import { cadastrar } from "./actions";
 
 export default function CadastroPage() {
   const [state, action, pending] = useActionState(cadastrar, undefined);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">Criar conta</h1>
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Criar conta</h1>
 
-      <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+      <form action={action} className={`flex w-full max-w-sm flex-col gap-3 ${cartao}`}>
         <input
           type="text"
           name="nome"
           placeholder="Nome completo"
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         {state?.erros?.nome && (
           <p className="text-sm text-red-600">{state.erros.nome[0]}</p>
@@ -27,17 +29,27 @@ export default function CadastroPage() {
           type="email"
           name="email"
           placeholder="E-mail"
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         {state?.erros?.email && (
           <p className="text-sm text-red-600">{state.erros.email[0]}</p>
         )}
 
         <input
+          type="text"
+          name="cpf"
+          placeholder="CPF"
+          className={campoInput}
+        />
+        {state?.erros?.cpf && (
+          <p className="text-sm text-red-600">{state.erros.cpf[0]}</p>
+        )}
+
+        <input
           type="password"
           name="senha"
           placeholder="Senha"
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         {state?.erros?.senha && (
           <p className="text-sm text-red-600">{state.erros.senha[0]}</p>
@@ -47,7 +59,7 @@ export default function CadastroPage() {
           type="password"
           name="confirmarSenha"
           placeholder="Confirmar senha"
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         {state?.erros?.confirmarSenha && (
           <p className="text-sm text-red-600">
@@ -59,16 +71,12 @@ export default function CadastroPage() {
           <p className="text-sm text-red-600">{state.mensagem}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
+        <button type="submit" disabled={pending} className={botaoPrimario}>
           Criar conta
         </button>
       </form>
 
-      <Link href="/login" className="text-sm underline">
+      <Link href="/login" className="text-sm text-primary underline">
         Já tem conta? Entrar
       </Link>
     </main>

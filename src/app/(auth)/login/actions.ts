@@ -8,7 +8,7 @@ import { signIn } from "@/auth";
 export async function login(formData: FormData) {
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      identificador: formData.get("identificador"),
       senha: formData.get("senha"),
       redirectTo: "/painel",
     });

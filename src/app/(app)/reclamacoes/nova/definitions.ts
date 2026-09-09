@@ -17,8 +17,16 @@ export const NovaReclamacaoSchema = z.object({
     .trim()
     .min(5, { error: "Informe o endereço." })
     .max(255),
+  bairro: z
+    .string()
+    .trim()
+    .min(1, { error: "Informe o bairro." })
+    .max(120),
   referencia: z.string().trim().max(255).optional().or(z.literal("")),
-  cep: z.string().trim().max(9).optional().or(z.literal("")),
+  cep: z
+    .string()
+    .trim()
+    .regex(/^\d{5}-?\d{3}$/, { error: "Informe um CEP válido (00000-000)." }),
 });
 
 export type NovaReclamacaoFormState =
@@ -29,6 +37,7 @@ export type NovaReclamacaoFormState =
         categoriaId?: string[];
         cidadeId?: string[];
         endereco?: string[];
+        bairro?: string[];
         referencia?: string[];
         cep?: string[];
       };

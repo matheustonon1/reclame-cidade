@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
+
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -8,36 +10,33 @@ export default async function LoginPage({
   const { erro } = await searchParams;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">Entrar</h1>
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Entrar</h1>
 
-      <form action={login} className="flex w-full max-w-sm flex-col gap-3">
+      <form action={login} className={`flex w-full max-w-sm flex-col gap-3 ${cartao}`}>
         <input
-          type="email"
-          name="email"
-          placeholder="E-mail"
+          type="text"
+          name="identificador"
+          placeholder="E-mail ou CPF"
           required
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         <input
           type="password"
           name="senha"
           placeholder="Senha"
           required
-          className="rounded border px-3 py-2"
+          className={campoInput}
         />
         {erro && (
-          <p className="text-sm text-red-600">E-mail ou senha inválidos.</p>
+          <p className="text-sm text-red-600">E-mail/CPF ou senha inválidos.</p>
         )}
-        <button
-          type="submit"
-          className="rounded bg-black px-3 py-2 text-white"
-        >
+        <button type="submit" className={botaoPrimario}>
           Entrar
         </button>
       </form>
 
-      <Link href="/cadastro" className="text-sm underline">
+      <Link href="/cadastro" className="text-sm text-primary underline">
         Ainda não tem conta? Cadastre-se
       </Link>
     </main>
