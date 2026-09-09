@@ -87,6 +87,7 @@ enum TipoNotificacao {
   MUDANCA_STATUS
   NOVO_COMENTARIO
   PEDIDO_AVALIACAO
+  ATIVIDADE_SUSPEITA
 }
 
 // ===========================================================================
@@ -119,6 +120,9 @@ model User {
 
   ativo     Boolean   @default(true)
   banidoAte DateTime?
+
+  termosAceitosEm DateTime? // consentimento de termos/LGPD no cadastro
+  criadoDeIp      String? // usado só pra limite de contas por IP
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
