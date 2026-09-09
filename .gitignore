@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# claude code - permissões e config local da ferramenta, não é código do projeto
+.claude/
