@@ -36,12 +36,14 @@ A validação factual é delegada a um mecanismo de **corroboração comunitári
 | Camada | Tecnologia |
 |---|---|
 | Front-end | React via Next.js (App Router), TypeScript |
-| Estilização | Tailwind CSS, shadcn/ui |
-| Back-end | Next.js Route Handlers |
+| Estilização | Tailwind CSS (design system próprio, sem biblioteca de componentes) |
+| Back-end | Next.js Route Handlers e Server Actions |
 | Banco de dados | MySQL 8.4 |
 | ORM | Prisma 6 |
-| Autenticação | Auth.js (NextAuth) |
-| Moderação | API de LLM multimodal |
+| Autenticação | Auth.js (NextAuth), login por e-mail ou CPF |
+| Moderação | API de LLM multimodal (Gemini) |
+| Armazenamento de imagem | Vercel Blob |
+| Processamento de imagem | sharp (redimensionamento/desfoque), blockhash-core (hash perceptual), exifr (metadados EXIF) |
 | Infraestrutura local | Docker Compose |
 
 As versões do Prisma estão fixadas propositalmente. A CLI passou por reestruturação em versões posteriores, com mudança de comandos e de formato de configuração. Fixar a versão garante reprodutibilidade do ambiente ao longo do desenvolvimento e na avaliação do trabalho.
@@ -99,6 +101,7 @@ Abra o `.env` e preencha:
 DATABASE_URL="mysql://root:root@localhost:3306/reclame_cidade"
 AUTH_SECRET="cole-aqui-uma-chave-gerada"
 GEMINI_API_KEY="sua-chave-da-api"
+BLOB_READ_WRITE_TOKEN="seu-token-do-vercel-blob"
 ```
 
 Para gerar o `AUTH_SECRET`:
@@ -106,6 +109,17 @@ Para gerar o `AUTH_SECRET`:
 ```bash
 npx auth secret
 ```
+
+O `BLOB_READ_WRITE_TOKEN` é necessário para o upload de imagem nas
+reclamações. Crie um Blob store gratuito em
+[vercel.com](https://vercel.com) → Storage → Create → Blob e copie o
+token — funciona em desenvolvimento local, não é preciso publicar o
+projeto na Vercel para testar. Sem essa variável, o restante do app
+funciona normalmente; só o envio de fotos falha.
+
+`NEXT_PUBLIC_APP_URL` é opcional (usada para montar o link no e-mail de
+verificação de conta) — sem provedor de e-mail configurado, esse link
+aparece no log do servidor em vez de ser enviado de verdade.
 
 O arquivo `.env` está no `.gitignore` e **nunca deve ser versionado**.
 
@@ -199,19 +213,25 @@ reclame-cidade/
 ├── prisma/
 │   ├── schema.prisma        # modelo de dados
 │   ├── migrations/          # histórico versionado do banco
-│   └── seed.ts              # dados iniciais
+│   └── seed.ts              # dados iniciais (geografia, categorias, admin/órgão demo)
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/          # login e cadastro
-│   │   ├── (app)/           # área autenticada
-│   │   ├── (admin)/         # painel de moderação
-│   │   └── api/             # rotas de API
-│   ├── components/
-│   │   └── ui/              # componentes shadcn/ui
+│   │   ├── (auth)/          # login, cadastro e verificação de e-mail
+│   │   ├── (app)/           # área autenticada (painel, conta, reclamações)
+│   │   ├── (admin)/         # painel de moderação humana
+│   │   ├── cidades/         # perfil público por cidade (ranking, índice de resolução)
+│   │   ├── reclamacoes/     # feed público
+│   │   └── api/             # rotas de API (busca de cidade, consulta de CEP)
+│   ├── components/          # UI compartilhada (header, menus, badges, combobox de cidade)
 │   ├── lib/
 │   │   ├── prisma.ts        # instância única do Prisma Client
 │   │   ├── auth.ts          # configuração do Auth.js
-│   │   └── moderacao/       # pipeline de moderação por IA
+│   │   ├── moderacao/       # pipeline de moderação por IA (texto + imagem)
+│   │   ├── imagem.ts        # phash, EXIF e desfoque de rosto/placa
+│   │   ├── storage.ts       # upload para o Vercel Blob
+│   │   ├── cpf.ts           # validação e hash do CPF
+│   │   ├── email.ts         # token e envio do e-mail de verificação
+│   │   └── notificacoes.ts  # criação de notificações in-app
 │   └── types/
 ├── public/
 ├── docker-compose.yml
@@ -311,7 +331,7 @@ O sistema trata dados pessoais e observa a Lei Geral de Proteção de Dados (Lei
 - Coleta mínima de dados no cadastro
 - Documentos de identificação, quando utilizados na verificação, são armazenados apenas em forma de hash
 - Imagens submetidas passam por detecção de rostos e placas veiculares, com desfoque automático
-- Exclusão de conta e dos dados associados disponível ao usuário
+- Edição de dados cadastrais e troca de senha disponíveis em "Minha conta"; exclusão de conta ainda **não** implementada
 - Registros de moderação mantidos para fins de auditoria e recurso
 
 ---
