@@ -6,9 +6,14 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { criarNotificacao } from "@/lib/notificacoes";
+import { precisaVerificarEmail } from "@/lib/verificacao";
 
-import { AvaliacaoSchema, RespostaOficialSchema } from "./definitions";
+import { AvaliacaoSchema, DenunciaSchema, RespostaOficialSchema } from "./definitions";
 import { exigirOrgao } from "./exigir-orgao";
+
+const LIMITE_DENUNCIAS_DIA = 10;
+const JANELA_RAJADA_MINUTOS = 30;
+const LIMITE_CONFIRMACOES_RAJADA = 15;
 
 export async function alternarConfirmacao(
   reclamacaoId: string,
@@ -19,12 +24,16 @@ export async function alternarConfirmacao(
     redirect("/login");
   }
 
-  const reclamacao = await prisma.reclamacao.findUnique({
-    where: { id: reclamacaoId },
-  });
+  const [usuario, reclamacao] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.reclamacao.findUnique({ where: { id: reclamacaoId } }),
+  ]);
 
   if (!reclamacao || reclamacao.autorId === session.user.id) {
     return;
+  }
+  if (usuario && precisaVerificarEmail(usuario)) {
+    redirect(`/reclamacoes/${protocolo}?erro=email-nao-verificado`);
   }
 
   const chave = {
@@ -42,7 +51,107 @@ export async function alternarConfirmacao(
     await prisma.confirmacao.create({
       data: { userId: session.user.id, reclamacaoId },
     });
+    await alertarSeRajadaSuspeita(reclamacaoId);
   }
+
+  revalidatePath(`/reclamacoes/${protocolo}`);
+}
+
+async function alertarSeRajadaSuspeita(reclamacaoId: string) {
+  const desde = new Date(Date.now() - JANELA_RAJADA_MINUTOS * 60 * 1000);
+  const confirmacoesRecentes = await prisma.confirmacao.count({
+    where: { reclamacaoId, createdAt: { gte: desde } },
+  });
+  if (confirmacoesRecentes < LIMITE_CONFIRMACOES_RAJADA) {
+    return;
+  }
+
+  const jaAlertado = await prisma.notificacao.findFirst({
+    where: { reclamacaoId, tipo: "ATIVIDADE_SUSPEITA" },
+  });
+  if (jaAlertado) {
+    return;
+  }
+
+  const moderadores = await prisma.user.findMany({
+    where: { papel: { in: ["MODERADOR", "ADMIN"] } },
+    select: { id: true },
+  });
+
+  await Promise.all(
+    moderadores.map((moderador) =>
+      criarNotificacao({
+        userId: moderador.id,
+        tipo: "ATIVIDADE_SUSPEITA",
+        titulo: "Atividade suspeita em confirmações",
+        mensagem: `Uma reclamação recebeu ${confirmacoesRecentes} confirmações em ${JANELA_RAJADA_MINUTOS} minutos — pode ser articulação coordenada. Revise manualmente.`,
+        reclamacaoId,
+      })
+    )
+  );
+}
+
+export async function criarDenuncia(
+  reclamacaoId: string,
+  protocolo: string,
+  formData: FormData
+) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const validado = DenunciaSchema.safeParse({
+    motivo: formData.get("motivo"),
+    descricao: formData.get("descricao"),
+    declaracaoVeracidade: formData.get("declaracaoVeracidade"),
+  });
+  if (!validado.success) {
+    return;
+  }
+
+  const [usuario, reclamacao] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.reclamacao.findUnique({ where: { id: reclamacaoId } }),
+  ]);
+
+  if (!reclamacao || reclamacao.autorId === session.user.id) {
+    return;
+  }
+  if (usuario && precisaVerificarEmail(usuario)) {
+    redirect(`/reclamacoes/${protocolo}?erro=email-nao-verificado`);
+  }
+
+  const denunciaAberta = await prisma.denuncia.findFirst({
+    where: {
+      denuncianteId: session.user.id,
+      alvoTipo: "RECLAMACAO",
+      alvoId: reclamacaoId,
+      status: "ABERTA",
+    },
+  });
+  if (denunciaAberta) {
+    return;
+  }
+
+  const inicioDoDia = new Date();
+  inicioDoDia.setHours(0, 0, 0, 0);
+  const denunciasHoje = await prisma.denuncia.count({
+    where: { denuncianteId: session.user.id, createdAt: { gte: inicioDoDia } },
+  });
+  if (denunciasHoje >= LIMITE_DENUNCIAS_DIA) {
+    return;
+  }
+
+  await prisma.denuncia.create({
+    data: {
+      alvoTipo: "RECLAMACAO",
+      alvoId: reclamacaoId,
+      denuncianteId: session.user.id,
+      motivo: validado.data.motivo,
+      descricao: validado.data.descricao,
+    },
+  });
 
   revalidatePath(`/reclamacoes/${protocolo}`);
 }

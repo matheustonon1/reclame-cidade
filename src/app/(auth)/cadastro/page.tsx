@@ -2,16 +2,26 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Script from "next/script";
 
 import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
 
 import { cadastrar } from "./actions";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function CadastroPage() {
   const [state, action, pending] = useActionState(cadastrar, undefined);
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+      {TURNSTILE_SITE_KEY && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+        />
+      )}
+
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Criar conta</h1>
 
       <form action={action} className={`flex w-full max-w-sm flex-col gap-3 ${cartao}`}>
@@ -65,6 +75,24 @@ export default function CadastroPage() {
           <p className="text-sm text-red-600">
             {state.erros.confirmarSenha[0]}
           </p>
+        )}
+
+        <label className="flex items-start gap-2 text-sm text-slate-600">
+          <input type="checkbox" name="aceitaTermos" required className="mt-0.5" />
+          <span>
+            Li e aceito os{" "}
+            <Link href="/termos" target="_blank" className="text-primary underline">
+              Termos de Uso e a Política de Privacidade
+            </Link>
+            .
+          </span>
+        </label>
+        {state?.erros?.aceitaTermos && (
+          <p className="text-sm text-red-600">{state.erros.aceitaTermos[0]}</p>
+        )}
+
+        {TURNSTILE_SITE_KEY && (
+          <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
         )}
 
         {state?.mensagem && (

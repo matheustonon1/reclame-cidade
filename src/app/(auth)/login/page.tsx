@@ -28,7 +28,10 @@ export default async function LoginPage({
           required
           className={campoInput}
         />
-        {erro && (
+        {erro === "banido" && (
+          <p className="text-sm text-red-600">Esta conta está suspensa.</p>
+        )}
+        {erro && erro !== "banido" && (
           <p className="text-sm text-red-600">E-mail/CPF ou senha inválidos.</p>
         )}
         <button type="submit" className={botaoPrimario}>

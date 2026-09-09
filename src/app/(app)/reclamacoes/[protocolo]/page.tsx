@@ -6,13 +6,25 @@ import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/status-badge";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
-import { alternarConfirmacao, avaliarReclamacao, responderReclamacao } from "./actions";
+import { alternarConfirmacao, avaliarReclamacao, criarDenuncia, responderReclamacao } from "./actions";
 import { construirLinhaDoTempo } from "./linha-do-tempo";
+
+const MOTIVO_LABEL: Record<string, string> = {
+  OFENSIVO: "Conteúdo ofensivo",
+  SPAM: "Spam",
+  DESINFORMACAO: "Desinformação",
+  FORA_DE_ESCOPO: "Fora do escopo municipal",
+  DADOS_PESSOAIS: "Exposição de dados pessoais",
+  DUPLICADA: "Reclamação duplicada",
+  OUTRO: "Outro",
+};
 
 export default async function ReclamacaoPage({
   params,
+  searchParams,
 }: PageProps<"/reclamacoes/[protocolo]">) {
   const { protocolo } = await params;
+  const { erro } = await searchParams;
 
   const reclamacao = await prisma.reclamacao.findUnique({
     where: { protocolo },
@@ -65,6 +77,18 @@ export default async function ReclamacaoPage({
   const podeAvaliar =
     ehAutor && reclamacao.status === "RESOLVIDA" && !reclamacao.avaliacao;
 
+  const denunciaAberta =
+    !!session?.user &&
+    !ehAutor &&
+    (await prisma.denuncia.findFirst({
+      where: {
+        denuncianteId: session.user.id,
+        alvoTipo: "RECLAMACAO",
+        alvoId: reclamacao.id,
+        status: "ABERTA",
+      },
+    })) !== null;
+
   const linhaDoTempo = construirLinhaDoTempo(
     reclamacao,
     reclamacao.respostas,
@@ -113,16 +137,70 @@ export default async function ReclamacaoPage({
             publicação.
           </p>
         )}
+        {erro === "email-nao-verificado" && (
+          <p className="text-sm text-amber-600">
+            Verifique seu e-mail antes de confirmar ou denunciar reclamações —
+            reenvie o link em{" "}
+            <Link href="/painel" className="underline">
+              seu painel
+            </Link>
+            .
+          </p>
+        )}
         {!ehAutor && session?.user && (
-          <form
-            action={alternarConfirmacao.bind(null, reclamacao.id, protocolo)}
-          >
-            <button type="submit" className={`${botaoSecundario} w-fit`}>
-              {jaConfirmou
-                ? "✓ Também sofro com isso"
-                : "Também sofro com isso"}
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <form
+              action={alternarConfirmacao.bind(null, reclamacao.id, protocolo)}
+            >
+              <button type="submit" className={`${botaoSecundario} w-fit`}>
+                {jaConfirmou
+                  ? "✓ Também sofro com isso"
+                  : "Também sofro com isso"}
+              </button>
+            </form>
+            {!denunciaAberta && (
+              <details className="w-fit">
+                <summary
+                  className={`${botaoSecundario} inline-flex w-fit cursor-pointer list-none text-red-700`}
+                >
+                  Denunciar
+                </summary>
+                <form
+                  action={criarDenuncia.bind(null, reclamacao.id, protocolo)}
+                  className={`mt-2 flex w-72 flex-col gap-2 ${cartao}`}
+                >
+                  <select name="motivo" required defaultValue="" className={campoInput}>
+                    <option value="" disabled>
+                      Motivo
+                    </option>
+                    {Object.entries(MOTIVO_LABEL).map(([valor, label]) => (
+                      <option key={valor} value={valor}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    name="descricao"
+                    placeholder="Descrição (opcional)"
+                    rows={2}
+                    className={campoInput}
+                  />
+                  <label className="flex items-start gap-2 text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      name="declaracaoVeracidade"
+                      required
+                      className="mt-0.5"
+                    />
+                    <span>Declaro que esta denúncia é feita de boa-fé.</span>
+                  </label>
+                  <button type="submit" className={`${botaoPrimario} w-fit`}>
+                    Enviar denúncia
+                  </button>
+                </form>
+              </details>
+            )}
+          </div>
         )}
         <p className="text-sm text-slate-500">
           {reclamacao._count.confirmacoes} pessoa(s) confirmaram este problema.

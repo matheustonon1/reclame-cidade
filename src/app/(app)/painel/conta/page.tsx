@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { containerPagina } from "@/lib/estilos";
 
-import { FormularioPerfil, FormularioSenha } from "./formularios";
+import { FormularioExclusao, FormularioPerfil, FormularioSenha } from "./formularios";
 
 export default async function ContaPage() {
   const session = await auth();
@@ -24,6 +24,7 @@ export default async function ContaPage() {
 
       <FormularioPerfil nome={usuario.name ?? ""} telefone={usuario.telefone ?? ""} />
       <FormularioSenha />
+      <FormularioExclusao />
     </main>
   );
 }

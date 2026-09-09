@@ -11,6 +11,9 @@ export const CadastroSchema = z
       .string()
       .min(8, { error: "A senha deve ter ao menos 8 caracteres." }),
     confirmarSenha: z.string(),
+    aceitaTermos: z.literal("on", {
+      error: "É preciso aceitar os Termos de Uso e a Política de Privacidade.",
+    }),
   })
   .refine((dados) => dados.senha === dados.confirmarSenha, {
     error: "As senhas não conferem.",
@@ -25,6 +28,7 @@ export type CadastroFormState =
         cpf?: string[];
         senha?: string[];
         confirmarSenha?: string[];
+        aceitaTermos?: string[];
       };
       mensagem?: string;
     }

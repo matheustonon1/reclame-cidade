@@ -35,3 +35,14 @@ export type SenhaFormState =
       mensagem?: string;
     }
   | undefined;
+
+export const ExclusaoSchema = z.object({
+  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }),
+});
+
+export type ExclusaoFormState =
+  | {
+      erros?: { senhaAtual?: string[] };
+      mensagem?: string;
+    }
+  | undefined;

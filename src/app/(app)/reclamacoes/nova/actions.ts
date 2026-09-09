@@ -16,6 +16,7 @@ const MAX_IMAGENS = 5;
 const MAX_TAMANHO_BYTES = 5 * 1024 * 1024;
 const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp"];
 const DISTANCIA_REPOSTAGEM = 8;
+const LIMITE_RECLAMACOES_DIA = 5;
 
 export async function criarReclamacao(
   _state: NovaReclamacaoFormState,
@@ -35,10 +36,20 @@ export async function criarReclamacao(
     bairro: formData.get("bairro"),
     referencia: formData.get("referencia"),
     cep: formData.get("cep"),
+    declaracaoVeracidade: formData.get("declaracaoVeracidade"),
   });
 
   if (!validado.success) {
     return { erros: validado.error.flatten().fieldErrors };
+  }
+
+  const inicioDoDia = new Date();
+  inicioDoDia.setHours(0, 0, 0, 0);
+  const reclamacoesHoje = await prisma.reclamacao.count({
+    where: { autorId: session.user.id, createdAt: { gte: inicioDoDia } },
+  });
+  if (reclamacoesHoje >= LIMITE_RECLAMACOES_DIA) {
+    return { mensagem: "Você atingiu o limite de reclamações por dia. Tente novamente amanhã." };
   }
 
   const arquivos = formData

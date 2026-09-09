@@ -10,10 +10,12 @@ export function UserMenu({
   nome,
   email,
   ehModerador,
+  ehOrgao,
 }: {
   nome: string;
   email: string;
   ehModerador: boolean;
+  ehOrgao: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,12 +71,37 @@ export function UserMenu({
             Minha conta
           </Link>
           {ehModerador && (
+            <>
+              <Link
+                href="/moderacao"
+                onClick={() => setAberto(false)}
+                className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Fila de moderação
+              </Link>
+              <Link
+                href="/moderacao/historico"
+                onClick={() => setAberto(false)}
+                className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Histórico de moderação
+              </Link>
+              <Link
+                href="/denuncias"
+                onClick={() => setAberto(false)}
+                className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Denúncias
+              </Link>
+            </>
+          )}
+          {ehOrgao && (
             <Link
-              href="/moderacao"
+              href="/orgao"
               onClick={() => setAberto(false)}
               className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
             >
-              Fila de moderação
+              Painel do órgão
             </Link>
           )}
 

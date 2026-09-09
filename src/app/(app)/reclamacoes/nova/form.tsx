@@ -207,6 +207,22 @@ export function NovaReclamacaoForm({
         )}
       </div>
 
+      <label className="flex items-start gap-2 text-sm text-slate-600">
+        <input
+          type="checkbox"
+          name="declaracaoVeracidade"
+          required
+          className="mt-0.5"
+        />
+        <span>
+          Declaro que as informações fornecidas são verdadeiras e assumo
+          responsabilidade pelo conteúdo desta reclamação.
+        </span>
+      </label>
+      {state?.erros?.declaracaoVeracidade && (
+        <p className="text-sm text-red-600">{state.erros.declaracaoVeracidade[0]}</p>
+      )}
+
       {state?.mensagem && (
         <p className="text-sm text-red-600">{state.mensagem}</p>
       )}

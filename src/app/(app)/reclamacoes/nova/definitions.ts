@@ -27,6 +27,9 @@ export const NovaReclamacaoSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{5}-?\d{3}$/, { error: "Informe um CEP válido (00000-000)." }),
+  declaracaoVeracidade: z.literal("on", {
+    error: "É preciso declarar que as informações são verdadeiras.",
+  }),
 });
 
 export type NovaReclamacaoFormState =
@@ -40,6 +43,7 @@ export type NovaReclamacaoFormState =
         bairro?: string[];
         referencia?: string[];
         cep?: string[];
+        declaracaoVeracidade?: string[];
       };
       mensagem?: string;
     }

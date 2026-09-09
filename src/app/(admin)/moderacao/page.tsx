@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { prisma } from "@/lib/prisma";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
@@ -33,9 +35,19 @@ export default async function ModeracaoPage() {
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-        Fila de moderação
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Fila de moderação
+        </h1>
+        <div className="flex gap-3">
+          <Link href="/denuncias" className="text-sm text-primary underline">
+            Denúncias
+          </Link>
+          <Link href="/moderacao/historico" className="text-sm text-primary underline">
+            Ver histórico completo
+          </Link>
+        </div>
+      </div>
 
       {pendentes.length === 0 && (
         <p className="text-sm text-slate-500">

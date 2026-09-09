@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
-import { hashCpf, normalizarCpf } from "@/lib/cpf";
+import { buscarUsuarioPorIdentificador } from "@/lib/identificador";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -26,14 +26,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const cpfDigitado = normalizarCpf(identificador);
-        const usuario = /^\d{11}$/.test(cpfDigitado)
-          ? await prisma.user.findUnique({
-              where: { cpfHash: hashCpf(cpfDigitado) },
-            })
-          : await prisma.user.findUnique({ where: { email: identificador } });
+        const usuario = await buscarUsuarioPorIdentificador(identificador);
 
         if (!usuario?.senhaHash) {
+          return null;
+        }
+
+        // Defesa em profundidade - o caminho normal (login/actions.ts) já
+        // barra conta banida antes de chegar aqui, com mensagem própria.
+        if (usuario.banidoAte && usuario.banidoAte > new Date()) {
           return null;
         }
 

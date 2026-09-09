@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
 
-import { alterarSenha, atualizarPerfil } from "./actions";
+import { alterarSenha, atualizarPerfil, excluirConta } from "./actions";
 
 export function FormularioPerfil({
   nome,
@@ -97,6 +97,45 @@ export function FormularioSenha() {
 
       <button type="submit" disabled={pending} className={`${botaoPrimario} w-fit`}>
         Alterar senha
+      </button>
+    </form>
+  );
+}
+
+export function FormularioExclusao() {
+  const [state, action, pending] = useActionState(excluirConta, undefined);
+
+  return (
+    <form
+      action={action}
+      className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50/50 p-4"
+    >
+      <h2 className="font-semibold text-red-800">Excluir conta</h2>
+      <p className="text-sm text-red-700">
+        Seus dados pessoais (nome, e-mail, CPF, telefone) são apagados. As
+        reclamações que você publicou continuam visíveis, mas sem
+        identificação do autor. Essa ação não pode ser desfeita.
+      </p>
+
+      <input
+        type="password"
+        name="senhaAtual"
+        placeholder="Confirme sua senha"
+        className={campoInput}
+      />
+      {state?.erros?.senhaAtual && (
+        <p className="text-sm text-red-600">{state.erros.senhaAtual[0]}</p>
+      )}
+      {state?.mensagem && (
+        <p className="text-sm text-red-600">{state.mensagem}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-fit rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+      >
+        Excluir minha conta
       </button>
     </form>
   );

@@ -25,3 +25,21 @@ export const AvaliacaoSchema = z.object({
     .union([z.literal(""), z.string().trim().max(1000)])
     .transform((valor) => (valor === "" ? undefined : valor)),
 });
+
+export const DenunciaSchema = z.object({
+  motivo: z.enum([
+    "OFENSIVO",
+    "SPAM",
+    "DESINFORMACAO",
+    "FORA_DE_ESCOPO",
+    "DADOS_PESSOAIS",
+    "DUPLICADA",
+    "OUTRO",
+  ]),
+  descricao: z
+    .union([z.literal(""), z.string().trim().max(1000)])
+    .transform((valor) => (valor === "" ? undefined : valor)),
+  declaracaoVeracidade: z.literal("on", {
+    error: "É preciso confirmar que a denúncia é feita de boa-fé.",
+  }),
+});

@@ -98,7 +98,7 @@ Descrição: ${descricao}
 Responda apenas com o JSON solicitado. Os scores devem ser números entre 0 e 1. A justificativa deve ter até 300 caracteres e ser objetiva.`;
 }
 
-function decidir(
+export function decidir(
   scoreGeral: number
 ): "APROVAR" | "REPROVAR" | "ENCAMINHAR_REVISAO" {
   if (scoreGeral >= 0.75) return "REPROVAR";
