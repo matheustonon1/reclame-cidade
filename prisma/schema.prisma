@@ -249,6 +249,7 @@ model Orgao {
   responsaveis User[]
   respostas    RespostaOficial[]
 
+  @@unique([cidadeId, nome])
   @@index([cidadeId])
 }
 

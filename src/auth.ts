@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
+import { hashCpf, normalizarCpf } from "@/lib/cpf";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -14,18 +15,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: {},
+        identificador: {},
         senha: {},
       },
       async authorize(credentials) {
-        const email = credentials?.email;
+        const identificador = credentials?.identificador;
         const senha = credentials?.senha;
 
-        if (typeof email !== "string" || typeof senha !== "string") {
+        if (typeof identificador !== "string" || typeof senha !== "string") {
           return null;
         }
 
-        const usuario = await prisma.user.findUnique({ where: { email } });
+        const cpfDigitado = normalizarCpf(identificador);
+        const usuario = /^\d{11}$/.test(cpfDigitado)
+          ? await prisma.user.findUnique({
+              where: { cpfHash: hashCpf(cpfDigitado) },
+            })
+          : await prisma.user.findUnique({ where: { email: identificador } });
+
         if (!usuario?.senhaHash) {
           return null;
         }
@@ -40,6 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: usuario.name,
           email: usuario.email,
           papel: usuario.papel,
+          orgaoId: usuario.orgaoId,
         };
       },
     }),
@@ -48,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.papel = (user as { papel: typeof token.papel }).papel;
+        token.orgaoId = (user as { orgaoId: string | null }).orgaoId;
       }
       return token;
     },
@@ -55,6 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user && token.sub) {
         session.user.id = token.sub;
         session.user.papel = token.papel ?? session.user.papel;
+        session.user.orgaoId = token.orgaoId ?? null;
       }
       return session;
     },
