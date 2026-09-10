@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import sharp from "sharp";
+import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -71,28 +72,48 @@ export async function criarReclamacao(
   const { titulo, descricao, categoriaId, cidadeId, endereco, bairro, referencia, cep } =
     validado.data;
 
-  const protocolo = await gerarProtocolo();
-
   const bairroRegistro = await prisma.bairro.upsert({
     where: { cidadeId_nome: { cidadeId, nome: bairro } },
     update: {},
     create: { cidadeId, nome: bairro },
   });
 
-  const reclamacao = await prisma.reclamacao.create({
-    data: {
-      protocolo,
-      titulo,
-      descricao,
-      autorId: session.user.id,
-      categoriaId,
-      cidadeId,
-      bairroId: bairroRegistro.id,
-      endereco,
-      referencia: referencia || null,
-      cep,
-    },
-  });
+  // Retry curto em caso de colisão de protocolo (duas reclamações criadas
+  // no mesmo instante) - gerarProtocolo() não é atômico, então uma corrida
+  // rara ainda é possível mesmo com o número baseado no maior existente.
+  let reclamacao;
+  for (let tentativa = 1; ; tentativa++) {
+    const protocolo = await gerarProtocolo();
+    try {
+      reclamacao = await prisma.reclamacao.create({
+        data: {
+          protocolo,
+          titulo,
+          descricao,
+          autorId: session.user.id,
+          categoriaId,
+          cidadeId,
+          bairroId: bairroRegistro.id,
+          endereco,
+          referencia: referencia || null,
+          cep,
+        },
+      });
+      break;
+    } catch (erro) {
+      const colisaoDeProtocolo =
+        erro instanceof Prisma.PrismaClientKnownRequestError &&
+        erro.code === "P2002" &&
+        (Array.isArray(erro.meta?.target)
+          ? erro.meta.target.includes("protocolo")
+          : typeof erro.meta?.target === "string" &&
+            erro.meta.target.toLowerCase().includes("protocolo"));
+
+      if (!colisaoDeProtocolo || tentativa >= 3) {
+        throw erro;
+      }
+    }
+  }
 
   const midiasCriadas: {
     id: string;
