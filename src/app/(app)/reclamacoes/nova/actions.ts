@@ -103,6 +103,9 @@ export async function criarReclamacao(
 
   let possivelReposicao = false;
 
+  // Processamento de imagem (upload, phash, EXIF) isolado da moderação: se
+  // uma foto falhar ao subir, a reclamação ainda precisa ser moderada pelo
+  // texto - não pode ficar travada em EM_MODERACAO só por causa da imagem.
   try {
     const phashesExistentes =
       arquivos.length > 0
@@ -160,8 +163,13 @@ export async function criarReclamacao(
         alturaPx: metadados.height ?? 0,
       });
     }
+  } catch (erro) {
+    console.error("Falha ao processar imagens da reclamação:", erro);
+  }
 
-    const { regioesSensiveis } = await moderarReclamacao(
+  let regioesSensiveis: Awaited<ReturnType<typeof moderarReclamacao>>["regioesSensiveis"] = [];
+  try {
+    const resultado = await moderarReclamacao(
       reclamacao.id,
       midiasCriadas.map((midia, indice) => ({
         buffer: midia.buffer,
@@ -169,18 +177,27 @@ export async function criarReclamacao(
       })),
       { possivelReposicao }
     );
+    regioesSensiveis = resultado.regioesSensiveis;
+  } catch (erro) {
+    console.error("Falha na moderação automática:", erro);
+  }
 
-    const regioesPorMidia = new Map<number, typeof regioesSensiveis>();
-    for (const regiao of regioesSensiveis) {
-      const lista = regioesPorMidia.get(regiao.midiaIndice) ?? [];
-      lista.push(regiao);
-      regioesPorMidia.set(regiao.midiaIndice, lista);
-    }
+  const regioesPorMidia = new Map<number, typeof regioesSensiveis>();
+  for (const regiao of regioesSensiveis) {
+    const lista = regioesPorMidia.get(regiao.midiaIndice) ?? [];
+    lista.push(regiao);
+    regioesPorMidia.set(regiao.midiaIndice, lista);
+  }
 
-    for (const [indice, midia] of midiasCriadas.entries()) {
-      const regioes = regioesPorMidia.get(indice);
-      if (!regioes || regioes.length === 0) continue;
+  // Se o blur falhar numa imagem que tinha rosto/placa detectado, a
+  // reclamação NUNCA pode ficar publicada com a foto original exposta -
+  // força revisão humana em vez de confiar na decisão automática.
+  let falhaAoBorrar = false;
+  for (const [indice, midia] of midiasCriadas.entries()) {
+    const regioes = regioesPorMidia.get(indice);
+    if (!regioes || regioes.length === 0) continue;
 
+    try {
       const bufferTratado = await aplicarBlur(
         midia.buffer,
         midia.larguraPx,
@@ -197,9 +214,21 @@ export async function criarReclamacao(
         where: { id: midia.id },
         data: { urlTratada },
       });
+    } catch (erro) {
+      console.error("Falha ao aplicar desfoque na imagem:", erro);
+      falhaAoBorrar = true;
+      await prisma.midia.update({
+        where: { id: midia.id },
+        data: { statusModeracao: "REVISAO_HUMANA" },
+      });
     }
-  } catch (erro) {
-    console.error("Falha na moderação automática:", erro);
+  }
+
+  if (falhaAoBorrar) {
+    await prisma.reclamacao.update({
+      where: { id: reclamacao.id },
+      data: { status: "AGUARDANDO_REVISAO" },
+    });
   }
 
   redirect(`/reclamacoes/${reclamacao.protocolo}`);
