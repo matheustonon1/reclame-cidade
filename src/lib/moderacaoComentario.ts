@@ -2,7 +2,7 @@ import { Type } from "@google/genai";
 
 import { prisma } from "@/lib/prisma";
 
-import { getGeminiClient } from "./moderacao/gemini";
+import { gerarConteudoComRetry } from "./moderacao";
 
 const MODELO = "gemini-3.6-flash";
 const VERSAO_PROMPT = "v1";
@@ -41,8 +41,8 @@ Responda apenas com o JSON solicitado. Justificativa com até 200 caracteres.`;
 
 // Comentário é conteúdo bem mais curto e de menor risco que uma
 // reclamação inteira - moderação mais leve (3 eixos, decisão binária,
-// sem fila de revisão humana), mas ainda passa pelo mesmo pipeline de
-// auditoria (LogModeracao) que o resto do projeto usa.
+// sem fila de revisão prévia à publicação), mas ainda passa pelo mesmo
+// pipeline de auditoria (LogModeracao) que o resto do projeto usa.
 export async function moderarComentario(
   comentarioId: string,
   texto: string
@@ -56,7 +56,7 @@ export async function moderarComentario(
   let tokensSaida: number | undefined;
 
   try {
-    const resposta = await getGeminiClient().models.generateContent({
+    const resposta = await gerarConteudoComRetry({
       model: MODELO,
       contents: montarPrompt(texto),
       config: {
@@ -75,12 +75,26 @@ export async function moderarComentario(
     tokensEntrada = resposta.usageMetadata?.promptTokenCount;
     tokensSaida = resposta.usageMetadata?.candidatesTokenCount;
   } catch (erro) {
-    // Falha na IA não pode travar um comentário indefinidamente - erra
-    // para o lado de aprovar (mesmo risco que qualquer outro serviço
-    // externo indisponível já aceito no resto do projeto), mas sem
-    // registro de auditoria já que não houve análise de verdade.
+    // Falha na IA mesmo depois do retry erra pro lado de REPROVAR, não
+    // aprovar - fica oculto até um moderador revisar em
+    // /moderacao/comentarios, em vez de publicar sem moderação nenhuma
+    // e sem nenhum registro de auditoria.
     console.error("Falha na moderação de comentário:", erro);
-    return "APROVAR";
+    await prisma.logModeracao.create({
+      data: {
+        alvoTipo: "COMENTARIO",
+        alvoId: comentarioId,
+        provedor: "google",
+        modelo: MODELO,
+        versaoPrompt: VERSAO_PROMPT,
+        decisao: "REPROVAR",
+        scoreGeral: 1,
+        justificativa: "Falha ao consultar o modelo de moderação (ver logs do servidor).",
+        resultadoJson: "{}",
+        latenciaMs: Date.now() - inicio,
+      },
+    });
+    return "REPROVAR";
   }
 
   const scoreGeral = Math.max(
