@@ -12,7 +12,7 @@ import {
   decifrarSegredoTotp,
   gerarCodigosBackup,
   gerarSegredoTotp,
-  salvarCodigosBackup,
+  prepararCodigosBackup,
 } from "@/lib/totp";
 
 import {
@@ -80,14 +80,19 @@ export async function confirmarTotp(
   }
 
   const codigosBackup = gerarCodigosBackup();
+  const dadosCodigosBackup = await prepararCodigosBackup(usuario.id, codigosBackup);
+
+  // As três escritas precisam ser atômicas: se a criação dos códigos de
+  // backup falhasse fora dessa transação, uma conta poderia ficar com
+  // 2FA ativado e nenhum código de recuperação salvo.
   await prisma.$transaction([
     prisma.user.update({
       where: { id: usuario.id },
       data: { totpConfirmadoEm: new Date() },
     }),
     prisma.totpBackupCode.deleteMany({ where: { userId: usuario.id } }),
+    prisma.totpBackupCode.createMany({ data: dadosCodigosBackup }),
   ]);
-  await salvarCodigosBackup(usuario.id, codigosBackup);
 
   revalidatePath("/painel/conta");
 

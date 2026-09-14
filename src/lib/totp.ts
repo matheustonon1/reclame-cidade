@@ -72,15 +72,18 @@ export function gerarCodigosBackup(): string[] {
   );
 }
 
-export async function salvarCodigosBackup(userId: string, codigos: string[]) {
-  await prisma.totpBackupCode.createMany({
-    data: await Promise.all(
-      codigos.map(async (codigo) => ({
-        userId,
-        codigoHash: await bcrypt.hash(codigo, 10),
-      }))
-    ),
-  });
+// Retorna os dados já com hash, prontos pro `data` de um createMany -
+// não executa a escrita aqui, pra o chamador poder incluir a criação
+// dos códigos na mesma transação que ativa o 2FA. Se as duas escritas
+// não forem atômicas, uma falha entre elas deixa o 2FA ativado sem
+// nenhum código de backup utilizável.
+export async function prepararCodigosBackup(userId: string, codigos: string[]) {
+  return Promise.all(
+    codigos.map(async (codigo) => ({
+      userId,
+      codigoHash: await bcrypt.hash(codigo, 10),
+    }))
+  );
 }
 
 // Cada código de backup só pode ser usado uma vez - se bater, marca
@@ -116,18 +119,24 @@ export async function usuarioBloqueadoPorTotp(usuario: {
   return !!usuario.totpBloqueadoAte && usuario.totpBloqueadoAte > new Date();
 }
 
-export async function registrarFalhaTotp(userId: string, tentativasAtuais: number) {
-  const novasTentativas = tentativasAtuais + 1;
-  await prisma.user.update({
+// Incremento atômico no banco (Prisma `increment`), não leitura-depois-
+// escrita a partir de um valor lido antes pelo chamador - senão
+// tentativas concorrentes leem o mesmo contador desatualizado e todas
+// escrevem "valor lido + 1", deixando o contador bem menor que o número
+// real de tentativas e o bloqueio nunca dispara sob força bruta paralela.
+export async function registrarFalhaTotp(userId: string) {
+  const usuario = await prisma.user.update({
     where: { id: userId },
-    data:
-      novasTentativas >= LIMITE_TENTATIVAS
-        ? {
-            totpTentativasFalhas: 0,
-            totpBloqueadoAte: new Date(Date.now() + BLOQUEIO_MS),
-          }
-        : { totpTentativasFalhas: novasTentativas },
+    data: { totpTentativasFalhas: { increment: 1 } },
+    select: { totpTentativasFalhas: true },
   });
+
+  if (usuario.totpTentativasFalhas >= LIMITE_TENTATIVAS) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { totpTentativasFalhas: 0, totpBloqueadoAte: new Date(Date.now() + BLOQUEIO_MS) },
+    });
+  }
 }
 
 export async function resetarFalhasTotp(userId: string) {

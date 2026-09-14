@@ -66,7 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               (await consumirCodigoBackup(usuario.id, codigo)));
 
           if (!valido) {
-            await registrarFalhaTotp(usuario.id, usuario.totpTentativasFalhas);
+            await registrarFalhaTotp(usuario.id);
             return null;
           }
 
