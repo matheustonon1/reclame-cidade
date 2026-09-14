@@ -13,6 +13,13 @@ import { ComentarioSchema } from "./definitions";
 
 const LIMITE_COMENTARIOS_DIA = 20;
 
+const STATUS_PUBLICOS = [
+  "PUBLICADA",
+  "EM_ANDAMENTO",
+  "RESOLVIDA",
+  "ARQUIVADA",
+] as const;
+
 export async function criarComentario(
   reclamacaoId: string,
   protocolo: string,
@@ -39,6 +46,21 @@ export async function criarComentario(
   if (!reclamacao) {
     return;
   }
+
+  // Mesma regra de acesso da página: visível ao público, ou ao autor e a
+  // moderadores mesmo antes de publicar - evita que qualquer sessão
+  // comente numa reclamação que ainda não pode ver (aguardando revisão,
+  // rejeitada, rascunho).
+  const ehAutor = reclamacao.autorId === session.user.id;
+  const ehModerador = usuario?.papel === "MODERADOR" || usuario?.papel === "ADMIN";
+  if (
+    !ehAutor &&
+    !ehModerador &&
+    !(STATUS_PUBLICOS as readonly string[]).includes(reclamacao.status)
+  ) {
+    return;
+  }
+
   if (usuario && precisaVerificarEmail(usuario)) {
     redirect(`/reclamacoes/${protocolo}?erro=email-nao-verificado`);
   }

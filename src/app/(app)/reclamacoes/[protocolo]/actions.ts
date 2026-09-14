@@ -15,6 +15,13 @@ const LIMITE_DENUNCIAS_DIA = 10;
 const JANELA_RAJADA_MINUTOS = 30;
 const LIMITE_CONFIRMACOES_RAJADA = 15;
 
+const STATUS_PUBLICOS = [
+  "PUBLICADA",
+  "EM_ANDAMENTO",
+  "RESOLVIDA",
+  "ARQUIVADA",
+] as const;
+
 export async function alternarConfirmacao(
   reclamacaoId: string,
   protocolo: string
@@ -29,7 +36,11 @@ export async function alternarConfirmacao(
     prisma.reclamacao.findUnique({ where: { id: reclamacaoId } }),
   ]);
 
-  if (!reclamacao || reclamacao.autorId === session.user.id) {
+  if (
+    !reclamacao ||
+    reclamacao.autorId === session.user.id ||
+    !(STATUS_PUBLICOS as readonly string[]).includes(reclamacao.status)
+  ) {
     return;
   }
   if (usuario && precisaVerificarEmail(usuario)) {
@@ -115,7 +126,11 @@ export async function criarDenuncia(
     prisma.reclamacao.findUnique({ where: { id: reclamacaoId } }),
   ]);
 
-  if (!reclamacao || reclamacao.autorId === session.user.id) {
+  if (
+    !reclamacao ||
+    reclamacao.autorId === session.user.id ||
+    !(STATUS_PUBLICOS as readonly string[]).includes(reclamacao.status)
+  ) {
     return;
   }
   if (usuario && precisaVerificarEmail(usuario)) {
