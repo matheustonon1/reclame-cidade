@@ -56,6 +56,16 @@ body {
   }
 }
 
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    transform: translate(-50%, 2rem) scale(1.05);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.35s ease-out both;
 }
@@ -64,9 +74,14 @@ body {
   animation: pop-in 0.15s ease-out both;
 }
 
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
-  .animate-pop-in {
+  .animate-pop-in,
+  .animate-float {
     animation: none;
   }
 }
