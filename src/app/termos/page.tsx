@@ -3,12 +3,12 @@ import { containerPagina, cartao } from "@/lib/estilos";
 export default function TermosPage() {
   return (
     <main className={`${containerPagina} max-w-2xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
         Termos de Uso e Política de Privacidade
       </h1>
 
       <div className={`flex flex-col gap-2 ${cartao}`}>
-        <p className="text-sm text-amber-700">
+        <p className="text-sm text-amber-700 dark:text-amber-400">
           Este documento é um rascunho elaborado para fins de Trabalho de
           Conclusão de Curso e não substitui aconselhamento jurídico
           profissional. Antes de qualquer uso real da plataforma, recomenda-se
@@ -17,8 +17,10 @@ export default function TermosPage() {
       </div>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-slate-900">1. Termos de Uso</h2>
-        <p className="text-sm text-slate-700">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          1. Termos de Uso
+        </h2>
+        <p className="text-sm text-slate-700 dark:text-slate-300">
           Ao criar uma conta no Reclame Cidade, você concorda em fornecer
           informações verdadeiras, não publicar conteúdo ofensivo, difamatório,
           fraudulento ou fora do escopo de problemas urbanos do seu município,
@@ -28,7 +30,7 @@ export default function TermosPage() {
           qualquer pessoa, órgão ou grupo político é proibido e pode resultar
           em suspensão da conta.
         </p>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-slate-700 dark:text-slate-300">
           Todo conteúdo submetido passa por um pipeline de moderação
           automatizada e, quando necessário, revisão humana, antes de ser
           publicado. Reclamações e denúncias podem ser rejeitadas, arquivadas
@@ -38,23 +40,23 @@ export default function TermosPage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           2. Política de Privacidade (LGPD)
         </h2>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-slate-700 dark:text-slate-300">
           Coletamos apenas os dados necessários para o funcionamento da
           plataforma: nome, e-mail, CPF (armazenado somente como hash,
           nunca em texto), telefone (opcional) e, quando você anexa fotos a
           uma reclamação, as imagens enviadas e seus metadados técnicos.
         </p>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-slate-700 dark:text-slate-300">
           Esses dados são usados para autenticação, prevenção de contas
           duplicadas ou falsas, comunicação sobre o andamento das suas
           reclamações, e auditoria do pipeline de moderação. Imagens
           passam por detecção automática de rosto e placa veicular, com
           desfoque antes da publicação.
         </p>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-slate-700 dark:text-slate-300">
           Você tem direito, a qualquer momento, de acessar, corrigir ou
           excluir seus dados pessoais pela página &quot;Minha conta&quot;. A
           exclusão de conta anonimiza seus dados pessoais; reclamações já

@@ -5,7 +5,7 @@ import { SeletorCidade } from "@/components/cidade-combobox";
 import { StatusBadge } from "@/components/status-badge";
 import { CategoriaIcon } from "@/components/categoria-icon";
 import { formatarTempoRelativo } from "@/lib/tempo-relativo";
-import { botaoPrimario, cartao, containerPagina } from "@/lib/estilos";
+import { botaoPrimario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
 export default async function ReclamacoesPublicasPage({
   searchParams,
@@ -48,7 +48,7 @@ export default async function ReclamacoesPublicasPage({
 
   return (
     <main className={containerPagina}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
         Reclamações públicas
       </h1>
 
@@ -58,7 +58,7 @@ export default async function ReclamacoesPublicasPage({
           name="q"
           defaultValue={buscaFiltro ?? ""}
           placeholder="Buscar por palavra-chave..."
-          className="min-w-48 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          className={`min-w-48 flex-1 ${campoInput}`}
         />
         <div className="min-w-48 flex-1">
           <SeletorCidade
@@ -80,7 +80,7 @@ export default async function ReclamacoesPublicasPage({
       </form>
 
       {(cidadeFiltro || buscaFiltro) && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Mostrando resultados
           {buscaFiltro && (
             <>
@@ -107,7 +107,7 @@ export default async function ReclamacoesPublicasPage({
       )}
 
       {reclamacoes.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Nenhuma reclamação publicada ainda.
         </p>
       )}
@@ -116,27 +116,27 @@ export default async function ReclamacoesPublicasPage({
         <Link
           key={reclamacao.id}
           href={`/reclamacoes/${reclamacao.protocolo}`}
-          className={`flex items-start gap-3 transition hover:border-slate-300 hover:shadow ${cartao}`}
+          className={`flex items-start gap-3 transition hover:border-slate-300 hover:shadow dark:hover:border-slate-600 ${cartao}`}
         >
           {reclamacao.midias[0] ? (
             // eslint-disable-next-line @next/next/no-img-element -- imagem externa (Vercel Blob), sem domínio fixo pra configurar no next/image
             <img
               src={reclamacao.midias[0].urlTratada ?? reclamacao.midias[0].url}
               alt=""
-              className="h-14 w-14 shrink-0 rounded-lg border border-slate-200 object-cover"
+              className="h-14 w-14 shrink-0 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
             />
           ) : (
             <CategoriaIcon
               icone={reclamacao.categoria.icone}
-              className="mt-0.5 h-5 w-5 shrink-0 text-slate-400"
+              className="mt-0.5 h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500"
             />
           )}
           <div className="flex-1">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-slate-900">{reclamacao.titulo}</p>
+              <p className="font-medium text-slate-900 dark:text-slate-100">{reclamacao.titulo}</p>
               <StatusBadge status={reclamacao.status} />
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {reclamacao.categoria.nome} · {reclamacao.cidade.nome} ·{" "}
               {formatarTempoRelativo(reclamacao.publicadaEm ?? reclamacao.createdAt)}
             </p>

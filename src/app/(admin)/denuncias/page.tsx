@@ -39,14 +39,16 @@ export default async function DenunciasPage() {
   return (
     <main className={`${containerPagina} max-w-3xl`}>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Denúncias</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          Denúncias
+        </h1>
         <Link href="/moderacao" className="text-sm text-primary underline">
           Fila de moderação
         </Link>
       </div>
 
       {denuncias.length === 0 && (
-        <p className="text-sm text-slate-500">Nenhuma denúncia em aberto.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma denúncia em aberto.</p>
       )}
 
       {denuncias.map((denuncia) => {
@@ -57,24 +59,28 @@ export default async function DenunciasPage() {
             {reclamacao ? (
               <Link
                 href={`/reclamacoes/${reclamacao.protocolo}`}
-                className="font-medium text-slate-900 hover:underline"
+                className="font-medium text-slate-900 hover:underline dark:text-slate-100"
               >
                 {reclamacao.titulo}
               </Link>
             ) : (
-              <p className="font-medium text-slate-400">(conteúdo removido)</p>
+              <p className="font-medium text-slate-400 dark:text-slate-500">
+                (conteúdo removido)
+              </p>
             )}
             {reclamacao && (
-              <p className="text-sm text-slate-600">{reclamacao.descricao}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">{reclamacao.descricao}</p>
             )}
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Motivo: <strong>{MOTIVO_LABEL[denuncia.motivo]}</strong> · Denunciado por{" "}
               {denuncia.denunciante.name ?? denuncia.denunciante.email} em{" "}
               {denuncia.createdAt.toLocaleString("pt-BR")}
             </p>
             {denuncia.descricao && (
-              <p className="text-sm italic text-slate-600">“{denuncia.descricao}”</p>
+              <p className="text-sm italic text-slate-600 dark:text-slate-400">
+                “{denuncia.descricao}”
+              </p>
             )}
 
             <div className="flex flex-wrap items-center gap-2">
@@ -94,14 +100,18 @@ export default async function DenunciasPage() {
                   action={banirAutor.bind(null, denuncia.id)}
                   className="flex items-center gap-2"
                 >
-                  <select name="duracao" defaultValue="7" className="rounded-lg border border-slate-300 px-2 py-1 text-sm">
+                  <select
+                    name="duracao"
+                    defaultValue="7"
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
                     <option value="7">7 dias</option>
                     <option value="30">30 dias</option>
                     <option value="permanente">Permanente</option>
                   </select>
                   <button
                     type="submit"
-                    className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+                    className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40"
                   >
                     Banir autor
                   </button>

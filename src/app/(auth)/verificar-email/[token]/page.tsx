@@ -35,12 +35,12 @@ export default async function VerificarEmailPage({
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+    <main className="animate-fade-in flex flex-1 flex-col items-center justify-center gap-4 p-8">
       <div className={`flex w-full max-w-sm flex-col items-center gap-3 text-center ${cartao}`}>
-        <h1 className="text-xl font-bold text-slate-900">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
           {valido ? "E-mail verificado!" : "Link inválido ou expirado"}
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           {valido
             ? "Sua conta agora está com o e-mail confirmado."
             : "Peça um novo link de verificação no seu painel."}

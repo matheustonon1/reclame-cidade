@@ -28,14 +28,16 @@ export default async function PainelPage() {
 
   return (
     <main className={containerPagina}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Painel</h1>
-      <p className="text-sm text-slate-600">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        Painel
+      </h1>
+      <p className="text-sm text-slate-600 dark:text-slate-400">
         Logado como <strong>{session.user.email}</strong> ({session.user.papel})
       </p>
 
       {!usuario?.emailVerified && (
         <div className={`flex items-center justify-between gap-3 ${cartao}`}>
-          <p className="text-sm text-amber-700">
+          <p className="text-sm text-amber-700 dark:text-amber-400">
             Seu e-mail ainda não foi verificado.
           </p>
           <form action={reenviarVerificacao}>
@@ -51,9 +53,11 @@ export default async function PainelPage() {
       </Link>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-slate-900">Minhas reclamações</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Minhas reclamações
+        </h2>
         {reclamacoes.length === 0 && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Você ainda não registrou nenhuma reclamação.
           </p>
         )}
@@ -61,11 +65,11 @@ export default async function PainelPage() {
           <Link
             key={reclamacao.id}
             href={`/reclamacoes/${reclamacao.protocolo}`}
-            className={`flex items-center justify-between gap-2 ${cartao}`}
+            className={`flex items-center justify-between gap-2 ${cartao} transition hover:border-primary`}
           >
             <div>
-              <p className="font-medium text-slate-900">{reclamacao.titulo}</p>
-              <p className="text-sm text-slate-500">{reclamacao.protocolo}</p>
+              <p className="font-medium text-slate-900 dark:text-slate-100">{reclamacao.titulo}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{reclamacao.protocolo}</p>
             </div>
             <StatusBadge status={reclamacao.status} />
           </Link>

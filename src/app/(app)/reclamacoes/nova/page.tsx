@@ -19,7 +19,7 @@ export default async function NovaReclamacaoPage() {
 
   return (
     <main className={`${containerPagina} max-w-xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
         Nova reclamação
       </h1>
       <NovaReclamacaoForm categorias={categorias} />

@@ -25,11 +25,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col bg-slate-50">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("tema");var e=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",e)}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col">
         <SiteHeader />
         {children}
-        <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
           Reclame Cidade — Trabalho de Conclusão de Curso
         </footer>
       </body>

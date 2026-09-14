@@ -22,12 +22,12 @@ const PASSOS = [
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center gap-16 px-6 py-16 sm:px-8">
+    <main className="animate-fade-in flex flex-1 flex-col items-center gap-16 px-6 py-16 sm:px-8">
       <div className="flex max-w-xl flex-col items-center gap-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Reclame <span className="text-primary">Cidade</span>
         </h1>
-        <p className="text-lg text-slate-600">
+        <p className="text-lg text-slate-600 dark:text-slate-400">
           Registre problemas urbanos do seu município e acompanhe a resposta
           oficial, com moderação de conteúdo assistida por IA.
         </p>
@@ -45,10 +45,10 @@ export default function Home() {
         {PASSOS.map((passo) => (
           <div
             key={passo.titulo}
-            className="rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-sm"
+            className="rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900"
           >
-            <p className="font-semibold text-slate-900">{passo.titulo}</p>
-            <p className="mt-1 text-slate-600">{passo.descricao}</p>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">{passo.titulo}</p>
+            <p className="mt-1 text-slate-600 dark:text-slate-400">{passo.descricao}</p>
           </div>
         ))}
       </div>

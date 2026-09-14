@@ -106,7 +106,7 @@ export function SeletorCidade({
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-md"
+          className="animate-pop-in absolute z-10 mt-1 max-h-60 w-full origin-top overflow-auto rounded-lg border border-slate-200 bg-white shadow-md dark:border-slate-700 dark:bg-slate-900"
         >
           {resultados.map((cidade, indice) => {
             const novoGrupo = cidade.estadoNome !== resultados[indice - 1]?.estadoNome;
@@ -116,7 +116,7 @@ export function SeletorCidade({
                 {novoGrupo && cidade.estadoNome && (
                   <p
                     role="presentation"
-                    className="bg-slate-50 px-3 py-1 text-xs font-medium text-slate-500"
+                    className="bg-slate-50 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                   >
                     {cidade.estadoNome}
                   </p>
@@ -132,7 +132,7 @@ export function SeletorCidade({
                     setAberto(false);
                     onSelecionar?.(cidade);
                   }}
-                  className="block w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100"
+                  className="block w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   {formatar(cidade)}
                 </button>

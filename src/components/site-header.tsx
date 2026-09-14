@@ -6,6 +6,7 @@ import { botaoSecundario } from "@/lib/estilos";
 
 import { BuscaCidadeHeader } from "./busca-cidade-header";
 import { NotificacoesSino } from "./notificacoes-sino";
+import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
@@ -37,9 +38,9 @@ export async function SiteHeader() {
   ]);
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-3 sm:px-8">
-        <Link href="/" className="text-lg font-bold tracking-tight text-slate-900">
+        <Link href="/" className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Reclame <span className="text-primary">Cidade</span>
         </Link>
 
@@ -48,10 +49,12 @@ export async function SiteHeader() {
         <nav className="ml-auto flex items-center gap-4 text-sm">
           <Link
             href="/reclamacoes"
-            className="hidden text-slate-600 hover:text-slate-900 sm:inline"
+            className="hidden text-slate-600 hover:text-slate-900 sm:inline dark:text-slate-400 dark:hover:text-slate-100"
           >
             Reclamações
           </Link>
+
+          <ThemeToggle />
 
           {usuario ? (
             <>
@@ -75,7 +78,10 @@ export async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-slate-600 hover:text-slate-900">
+              <Link
+                href="/login"
+                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              >
                 Entrar
               </Link>
               <Link href="/cadastro" className={botaoSecundario}>

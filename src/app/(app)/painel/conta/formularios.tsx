@@ -17,7 +17,7 @@ export function FormularioPerfil({
 
   return (
     <form action={action} className={`flex flex-col gap-3 ${cartao}`}>
-      <h2 className="font-semibold text-slate-900">Dados pessoais</h2>
+      <h2 className="font-semibold text-slate-900 dark:text-slate-100">Dados pessoais</h2>
 
       <input
         type="text"
@@ -27,7 +27,7 @@ export function FormularioPerfil({
         className={campoInput}
       />
       {state?.erros?.nome && (
-        <p className="text-sm text-red-600">{state.erros.nome[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.nome[0]}</p>
       )}
 
       <input
@@ -38,11 +38,11 @@ export function FormularioPerfil({
         className={campoInput}
       />
       {state?.erros?.telefone && (
-        <p className="text-sm text-red-600">{state.erros.telefone[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.telefone[0]}</p>
       )}
 
       {state?.mensagem && (
-        <p className="text-sm text-slate-600">{state.mensagem}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{state.mensagem}</p>
       )}
 
       <button type="submit" disabled={pending} className={`${botaoPrimario} w-fit`}>
@@ -57,7 +57,7 @@ export function FormularioSenha() {
 
   return (
     <form action={action} className={`flex flex-col gap-3 ${cartao}`}>
-      <h2 className="font-semibold text-slate-900">Alterar senha</h2>
+      <h2 className="font-semibold text-slate-900 dark:text-slate-100">Alterar senha</h2>
 
       <input
         type="password"
@@ -66,7 +66,7 @@ export function FormularioSenha() {
         className={campoInput}
       />
       {state?.erros?.senhaAtual && (
-        <p className="text-sm text-red-600">{state.erros.senhaAtual[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.senhaAtual[0]}</p>
       )}
 
       <input
@@ -76,7 +76,7 @@ export function FormularioSenha() {
         className={campoInput}
       />
       {state?.erros?.novaSenha && (
-        <p className="text-sm text-red-600">{state.erros.novaSenha[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.novaSenha[0]}</p>
       )}
 
       <input
@@ -86,13 +86,13 @@ export function FormularioSenha() {
         className={campoInput}
       />
       {state?.erros?.confirmarNovaSenha && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-red-600 dark:text-red-400">
           {state.erros.confirmarNovaSenha[0]}
         </p>
       )}
 
       {state?.mensagem && (
-        <p className="text-sm text-slate-600">{state.mensagem}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{state.mensagem}</p>
       )}
 
       <button type="submit" disabled={pending} className={`${botaoPrimario} w-fit`}>
@@ -108,10 +108,10 @@ export function FormularioExclusao() {
   return (
     <form
       action={action}
-      className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50/50 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50/50 p-4 dark:border-red-900 dark:bg-red-950/30"
     >
-      <h2 className="font-semibold text-red-800">Excluir conta</h2>
-      <p className="text-sm text-red-700">
+      <h2 className="font-semibold text-red-800 dark:text-red-400">Excluir conta</h2>
+      <p className="text-sm text-red-700 dark:text-red-400">
         Seus dados pessoais (nome, e-mail, CPF, telefone) são apagados. As
         reclamações que você publicou continuam visíveis, mas sem
         identificação do autor. Essa ação não pode ser desfeita.
@@ -124,16 +124,16 @@ export function FormularioExclusao() {
         className={campoInput}
       />
       {state?.erros?.senhaAtual && (
-        <p className="text-sm text-red-600">{state.erros.senhaAtual[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.senhaAtual[0]}</p>
       )}
       {state?.mensagem && (
-        <p className="text-sm text-red-600">{state.mensagem}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.mensagem}</p>
       )}
 
       <button
         type="submit"
         disabled={pending}
-        className="w-fit rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+        className="w-fit rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-800 active:scale-95 disabled:opacity-50 disabled:active:scale-100 dark:bg-red-600 dark:hover:bg-red-500"
       >
         Excluir minha conta
       </button>

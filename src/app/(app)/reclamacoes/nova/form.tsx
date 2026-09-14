@@ -73,7 +73,7 @@ export function NovaReclamacaoForm({
   return (
     <form action={action} className={`flex flex-col gap-5 ${cartao}`}>
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
           Sobre o problema
         </h2>
 
@@ -84,7 +84,7 @@ export function NovaReclamacaoForm({
           className={campoInput}
         />
         {state?.erros?.titulo && (
-          <p className="text-sm text-red-600">{state.erros.titulo[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.titulo[0]}</p>
         )}
 
         <textarea
@@ -94,7 +94,7 @@ export function NovaReclamacaoForm({
           className={campoInput}
         />
         {state?.erros?.descricao && (
-          <p className="text-sm text-red-600">{state.erros.descricao[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.descricao[0]}</p>
         )}
 
         <select name="categoriaId" defaultValue="" className={campoInput}>
@@ -108,12 +108,12 @@ export function NovaReclamacaoForm({
           ))}
         </select>
         {state?.erros?.categoriaId && (
-          <p className="text-sm text-red-600">{state.erros.categoriaId[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.categoriaId[0]}</p>
         )}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-200 pt-4">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">
+      <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
           Localização
         </h2>
 
@@ -126,15 +126,15 @@ export function NovaReclamacaoForm({
           className={campoInput}
         />
         {statusCep === "buscando" && (
-          <p className="text-sm text-slate-500">Buscando endereço...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Buscando endereço...</p>
         )}
         {statusCep === "nao-encontrado" && (
-          <p className="text-sm text-amber-600">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
             CEP não encontrado — preencha o endereço manualmente.
           </p>
         )}
         {state?.erros?.cep && (
-          <p className="text-sm text-red-600">{state.erros.cep[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.cep[0]}</p>
         )}
 
         <SeletorCidade
@@ -144,7 +144,7 @@ export function NovaReclamacaoForm({
           defaultValue={cidadeAutoPreenchida}
         />
         {state?.erros?.cidadeId && (
-          <p className="text-sm text-red-600">{state.erros.cidadeId[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.cidadeId[0]}</p>
         )}
 
         <input
@@ -155,7 +155,7 @@ export function NovaReclamacaoForm({
           className={campoInput}
         />
         {state?.erros?.endereco && (
-          <p className="text-sm text-red-600">{state.erros.endereco[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.endereco[0]}</p>
         )}
 
         <input
@@ -166,7 +166,7 @@ export function NovaReclamacaoForm({
           className={campoInput}
         />
         {state?.erros?.bairro && (
-          <p className="text-sm text-red-600">{state.erros.bairro[0]}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{state.erros.bairro[0]}</p>
         )}
 
         <input
@@ -177,8 +177,8 @@ export function NovaReclamacaoForm({
         />
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-200 pt-4">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">
+      <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
           Fotos (opcional)
         </h2>
 
@@ -188,9 +188,9 @@ export function NovaReclamacaoForm({
           multiple
           accept="image/jpeg,image/png,image/webp"
           onChange={(evento) => selecionarImagens(evento.target.files)}
-          className="text-sm text-slate-600"
+          className="text-sm text-slate-600 dark:text-slate-400"
         />
-        <p className="text-xs text-slate-400">Até 5 fotos, 5MB cada.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">Até 5 fotos, 5MB cada.</p>
 
         {previews.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -200,14 +200,14 @@ export function NovaReclamacaoForm({
                 key={url}
                 src={url}
                 alt=""
-                className="h-20 w-20 rounded-lg border border-slate-200 object-cover"
+                className="h-20 w-20 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
               />
             ))}
           </div>
         )}
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-slate-600">
+      <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
         <input
           type="checkbox"
           name="declaracaoVeracidade"
@@ -220,11 +220,11 @@ export function NovaReclamacaoForm({
         </span>
       </label>
       {state?.erros?.declaracaoVeracidade && (
-        <p className="text-sm text-red-600">{state.erros.declaracaoVeracidade[0]}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.erros.declaracaoVeracidade[0]}</p>
       )}
 
       {state?.mensagem && (
-        <p className="text-sm text-red-600">{state.mensagem}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{state.mensagem}</p>
       )}
 
       <button type="submit" disabled={pending} className={botaoPrimario}>

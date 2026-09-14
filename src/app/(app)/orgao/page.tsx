@@ -24,23 +24,23 @@ export default async function PainelOrgaoPage() {
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
         Painel do órgão{orgao ? ` — ${orgao.nome}` : ""}
       </h1>
 
       {pendentes.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Nenhuma reclamação pendente de resposta no momento.
         </p>
       )}
 
       {pendentes.map((reclamacao) => (
         <div key={reclamacao.id} className={`flex flex-col gap-2 ${cartao}`}>
-          <p className="font-medium text-slate-900">{reclamacao.titulo}</p>
-          <p className="text-sm text-slate-500">
+          <p className="font-medium text-slate-900 dark:text-slate-100">{reclamacao.titulo}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {reclamacao.protocolo} · {reclamacao.categoria.nome} · {reclamacao.endereco}
           </p>
-          <p className="text-slate-700">{reclamacao.descricao}</p>
+          <p className="text-slate-700 dark:text-slate-300">{reclamacao.descricao}</p>
 
           <form
             action={responderReclamacao.bind(null, reclamacao.id, reclamacao.protocolo)}
