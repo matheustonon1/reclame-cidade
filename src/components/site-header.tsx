@@ -14,6 +14,7 @@ export async function SiteHeader() {
   const ehModerador =
     session?.user?.papel === "MODERADOR" || session?.user?.papel === "ADMIN";
   const ehOrgao = session?.user?.papel === "ORGAO";
+  const ehAdmin = session?.user?.papel === "ADMIN";
 
   const [usuario, notificacoes, totalNaoLidas] = await Promise.all([
     session?.user
@@ -74,6 +75,7 @@ export async function SiteHeader() {
                 email={usuario.email}
                 ehModerador={ehModerador}
                 ehOrgao={ehOrgao}
+                ehAdmin={ehAdmin}
               />
             </>
           ) : (
