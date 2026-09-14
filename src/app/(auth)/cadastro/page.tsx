@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 
+import { TermosModal } from "@/components/termos-modal";
 import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
 
 import { cadastrar } from "./actions";
@@ -82,11 +83,7 @@ export default function CadastroPage() {
         <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
           <input type="checkbox" name="aceitaTermos" required className="mt-0.5" />
           <span>
-            Li e aceito os{" "}
-            <Link href="/termos" target="_blank" className="text-primary underline">
-              Termos de Uso e a Política de Privacidade
-            </Link>
-            .
+            Li e aceito os <TermosModal />.
           </span>
         </label>
         {state?.erros?.aceitaTermos && (
