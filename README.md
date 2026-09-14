@@ -10,6 +10,14 @@ Trabalho de Conclusão de Curso.
 
 O sistema permite que cidadãos registrem reclamações sobre problemas urbanos do seu município — buracos na via, iluminação pública, coleta de lixo, saneamento, transporte — anexando texto e imagens. Órgãos públicos cadastrados podem responder oficialmente e atualizar o status de cada ocorrência, e os cidadãos avaliam se o problema foi de fato resolvido.
 
+Além do fluxo básico de reclamação → moderação → resposta oficial, a plataforma inclui:
+
+- **Feed público por cidade**, com filtros por categoria/status e ordenação por recência ou confirmações da comunidade ("também sofro com isso")
+- **Reputação pública por órgão**, nos moldes do Reclame Aqui: selo (Ótimo/Bom/Regular/Ruim) calculado a partir do índice de resolução, tempo médio de resposta e nota dos cidadãos
+- **Comentários em cada reclamação**, moderados por IA, com fila de revisão humana para corrigir falsos positivos sem depender só da decisão automática
+- **Autenticação em duas etapas (TOTP)** por aplicativo autenticador, com códigos de backup de uso único
+- **Tema claro/escuro** com preferência persistida por usuário
+
 O diferencial técnico é o **pipeline de moderação automatizada**: todo conteúdo submetido passa por uma sequência de verificações antes de ser publicado, combinando checagens determinísticas com análise por modelo de linguagem multimodal.
 
 ### O que a moderação verifica
@@ -44,8 +52,10 @@ A validação factual é delegada a um mecanismo de **corroboração comunitári
 | Moderação | API de LLM multimodal (Gemini) |
 | Armazenamento de imagem | Vercel Blob |
 | Processamento de imagem | sharp (redimensionamento/desfoque), blockhash-core (hash perceptual), exifr (metadados EXIF) |
+| Autenticação em duas etapas | otplib (TOTP) + qrcode (QR code de configuração) |
+| Envio de e-mail | Resend (opcional — sem chave configurada, o link de verificação fica no log do servidor) |
 | Antifake no cadastro | Cloudflare Turnstile (opcional) |
-| Testes | Vitest |
+| Testes | Vitest (unitários) + Playwright (verificação end-to-end ad hoc durante o desenvolvimento) |
 | Infraestrutura local | Docker Compose |
 
 As versões do Prisma estão fixadas propositalmente. A CLI passou por reestruturação em versões posteriores, com mudança de comandos e de formato de configuração. Fixar a versão garante reprodutibilidade do ambiente ao longo do desenvolvimento e na avaliação do trabalho.
@@ -120,8 +130,15 @@ projeto na Vercel para testar. Sem essa variável, o restante do app
 funciona normalmente; só o envio de fotos falha.
 
 `NEXT_PUBLIC_APP_URL` é opcional (usada para montar o link no e-mail de
-verificação de conta) — sem provedor de e-mail configurado, esse link
-aparece no log do servidor em vez de ser enviado de verdade.
+verificação de conta). Default: `http://localhost:3000`.
+
+`RESEND_API_KEY` e `RESEND_FROM_EMAIL` são opcionais — ativam o envio
+real do e-mail de verificação via [Resend](https://resend.com) (plano
+grátis: 3.000 e-mails/mês). Sem `RESEND_API_KEY`, o link de verificação
+só aparece no log do servidor, o que já é suficiente para desenvolver.
+Sem domínio próprio verificado no Resend, `RESEND_FROM_EMAIL` pode ficar
+em branco (usa `onboarding@resend.dev`), mas nesse caso só entrega para
+o e-mail cadastrado na sua conta Resend.
 
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY` são opcionais
 (proteção antifake no cadastro) — crie uma chave grátis em
@@ -225,26 +242,32 @@ reclame-cidade/
 │   └── seed.ts              # dados iniciais (geografia, categorias, admin/órgão demo)
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/          # login, cadastro e verificação de e-mail
-│   │   ├── (app)/           # área autenticada (painel, conta, reclamações, órgão)
-│   │   ├── (admin)/         # moderação humana, histórico e fila de denúncias
-│   │   ├── cidades/         # perfil público por cidade (ranking, índice de resolução)
-│   │   ├── reclamacoes/     # feed público
+│   │   ├── (auth)/          # login (com 2FA), cadastro e verificação de e-mail
+│   │   ├── (app)/           # área autenticada (painel, conta + 2FA, reclamações, órgão)
+│   │   ├── (admin)/         # moderação humana (reclamações e comentários), histórico e fila de denúncias
+│   │   ├── cidades/         # feed público por cidade (filtros, ranking de órgãos, índice de resolução)
+│   │   ├── orgaos/          # perfil público de reputação por órgão
+│   │   ├── reclamacoes/     # feed público global (busca por cidade/palavra-chave)
 │   │   ├── termos/          # Termos de Uso e Política de Privacidade
 │   │   └── api/             # rotas de API (busca de cidade, consulta de CEP)
-│   ├── components/          # UI compartilhada (header, menus, badges, combobox de cidade)
+│   ├── components/          # UI compartilhada (header, menus, badges, combobox de cidade, tema, modal de termos)
 │   ├── lib/
 │   │   ├── prisma.ts        # instância única do Prisma Client
 │   │   ├── auth.ts          # configuração do Auth.js
 │   │   ├── moderacao/       # pipeline de moderação por IA (texto + imagem)
+│   │   ├── moderacaoComentario.ts # moderação de comentários (mais leve que a de reclamações)
 │   │   ├── imagem.ts        # phash, EXIF e desfoque de rosto/placa
 │   │   ├── storage.ts       # upload para o Vercel Blob
 │   │   ├── cpf.ts           # validação e hash do CPF
-│   │   ├── email.ts         # token e envio do e-mail de verificação
+│   │   ├── totp.ts          # segredo TOTP cifrado, QR code e códigos de backup do 2FA
+│   │   ├── email.ts         # token e envio (Resend, opcional) do e-mail de verificação
 │   │   ├── notificacoes.ts  # criação de notificações in-app
 │   │   ├── identificador.ts # busca de usuário por e-mail ou CPF
 │   │   ├── verificacao.ts   # regra de e-mail obrigatório p/ confirmar e denunciar
-│   │   └── turnstile.ts     # verificação antifake do Cloudflare Turnstile
+│   │   ├── turnstile.ts     # verificação antifake do Cloudflare Turnstile
+│   │   ├── protocolo.ts     # geração do número de protocolo (RC-AAAA-NNNNNNN)
+│   │   ├── tempo-relativo.ts # formatação de datas relativas ("há 2 dias")
+│   │   └── reputacaoOrgao.ts # métricas e selo de reputação por órgão
 │   └── types/
 ├── public/
 ├── docker-compose.yml
@@ -348,6 +371,16 @@ O sistema trata dados pessoais e observa a Lei Geral de Proteção de Dados (Lei
 - Edição de dados cadastrais e troca de senha disponíveis em "Minha conta"
 - Exclusão de conta disponível ao usuário — anonimiza os dados pessoais; reclamações já publicadas são mantidas como registro de interesse público, sem identificação do autor
 - Registros de moderação mantidos para fins de auditoria e recurso
+
+### Autenticação em duas etapas
+
+Qualquer usuário pode ativar 2FA por aplicativo autenticador (Google
+Authenticator, Authy etc.) em "Minha conta". O segredo TOTP é cifrado em
+repouso (AES-256-GCM, chave derivada de `AUTH_SECRET`) — nunca fica em
+texto puro no banco. Códigos de backup de uso único cobrem a perda do
+dispositivo, e o login bloqueia temporariamente após 5 tentativas de
+código incorretas. SMS e e-mail como segundo fator ainda não foram
+implementados — dependem da escolha de um provedor.
 
 ### Integridade de conta e antifake
 
