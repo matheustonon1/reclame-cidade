@@ -17,6 +17,8 @@ Além do fluxo básico de reclamação → moderação → resposta oficial, a p
 - **Comentários em cada reclamação**, moderados por IA, com fila de revisão humana para corrigir falsos positivos sem depender só da decisão automática
 - **Autenticação em duas etapas (TOTP)** por aplicativo autenticador, com códigos de backup de uso único
 - **Tema claro/escuro** com preferência persistida por usuário
+- **Cadastro de órgão com aprovação**: prefeituras/secretarias solicitam acesso publicamente, um ADMIN aprova ou rejeita, e só então a conta é criada e um link de definição de senha é enviado
+- **Dashboard de estatísticas de moderação**: taxa de aprovação, score médio por eixo, volume por dia e concordância entre a IA e a revisão humana
 
 O diferencial técnico é o **pipeline de moderação automatizada**: todo conteúdo submetido passa por uma sequência de verificações antes de ser publicado, combinando checagens determinísticas com análise por modelo de linguagem multimodal.
 
@@ -244,9 +246,10 @@ reclame-cidade/
 │   ├── app/
 │   │   ├── (auth)/          # login (com 2FA), cadastro e verificação de e-mail
 │   │   ├── (app)/           # área autenticada (painel, conta + 2FA, reclamações, órgão)
-│   │   ├── (admin)/         # moderação humana (reclamações e comentários), histórico e fila de denúncias
+│   │   ├── (admin)/         # moderação humana, estatísticas, denúncias e aprovação de órgão
 │   │   ├── cidades/         # feed público por cidade (filtros, ranking de órgãos, índice de resolução)
 │   │   ├── orgaos/          # perfil público de reputação por órgão
+│   │   ├── orgao/           # solicitação pública de acesso e definição de senha
 │   │   ├── reclamacoes/     # feed público global (busca por cidade/palavra-chave)
 │   │   ├── termos/          # Termos de Uso e Política de Privacidade
 │   │   └── api/             # rotas de API (busca de cidade, consulta de CEP)
@@ -381,6 +384,19 @@ texto puro no banco. Códigos de backup de uso único cobrem a perda do
 dispositivo, e o login bloqueia temporariamente após 5 tentativas de
 código incorretas. SMS e e-mail como segundo fator ainda não foram
 implementados — dependem da escolha de um provedor.
+
+### Acesso de órgão
+
+Contas de órgão não são autoatendimento como a de cidadão: uma prefeitura
+ou secretaria solicita acesso em `/orgao/solicitar` (nome, cidade,
+responsável, contato), e a conta só é criada depois que um **ADMIN**
+aprova o pedido em `/solicitacoes-orgao`. Na aprovação, o solicitante
+recebe um e-mail com link de uso único para definir a senha. Essa
+restrição existe porque uma conta de órgão pode postar "resposta
+oficial" em nome da prefeitura — o mesmo nível de confiança já exigido
+para banir usuário. O `seed.ts` continua criando um órgão de demonstração
+pronto (veja `SEED_ORGAO_EMAIL`/`SEED_ORGAO_SENHA`), útil para testar sem
+passar pelo fluxo de aprovação.
 
 ### Integridade de conta e antifake
 
