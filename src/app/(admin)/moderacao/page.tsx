@@ -46,6 +46,9 @@ export default async function ModeracaoPage() {
           <Link href="/moderacao/comentarios" className="text-sm text-primary underline">
             Comentários
           </Link>
+          <Link href="/moderacao/estatisticas" className="text-sm text-primary underline">
+            Estatísticas
+          </Link>
           <Link href="/moderacao/historico" className="text-sm text-primary underline">
             Ver histórico completo
           </Link>
