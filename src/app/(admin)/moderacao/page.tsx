@@ -36,12 +36,15 @@ export default async function ModeracaoPage() {
   return (
     <main className={`${containerPagina} max-w-3xl`}>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Fila de moderação
         </h1>
         <div className="flex gap-3">
           <Link href="/denuncias" className="text-sm text-primary underline">
             Denúncias
+          </Link>
+          <Link href="/moderacao/comentarios" className="text-sm text-primary underline">
+            Comentários
           </Link>
           <Link href="/moderacao/historico" className="text-sm text-primary underline">
             Ver histórico completo
@@ -50,7 +53,7 @@ export default async function ModeracaoPage() {
       </div>
 
       {pendentes.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Nenhuma reclamação aguardando revisão.
         </p>
       )}
@@ -60,16 +63,16 @@ export default async function ModeracaoPage() {
 
         return (
           <div key={reclamacao.id} className={`flex flex-col gap-2 ${cartao}`}>
-            <p className="font-medium text-slate-900">{reclamacao.titulo}</p>
-            <p className="text-sm text-slate-500">
+            <p className="font-medium text-slate-900 dark:text-slate-100">{reclamacao.titulo}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {reclamacao.protocolo} · {reclamacao.categoria.nome} ·{" "}
               {reclamacao.cidade.nome} - {reclamacao.cidade.estado.uf} ·{" "}
               {reclamacao.endereco}
             </p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Autor: {reclamacao.autor.name ?? reclamacao.autor.email}
             </p>
-            <p className="text-slate-800">{reclamacao.descricao}</p>
+            <p className="text-slate-800 dark:text-slate-200">{reclamacao.descricao}</p>
 
             {reclamacao.midias.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -79,33 +82,39 @@ export default async function ModeracaoPage() {
                     key={midia.id}
                     src={midia.urlTratada ?? midia.url}
                     alt=""
-                    className="h-32 w-32 rounded-lg border border-slate-200 object-cover"
+                    className="h-32 w-32 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
                   />
                 ))}
               </div>
             )}
 
             {log && (
-              <div className="rounded-lg bg-amber-50 p-3 text-sm">
-                <p className="font-medium text-amber-800">Análise da IA</p>
-                <p className="text-amber-900">Ofensivo: {log.scoreOfensivo?.toFixed(2)}</p>
-                <p className="text-amber-900">Spam: {log.scoreSpam?.toFixed(2)}</p>
-                <p className="text-amber-900">
+              <div className="rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
+                <p className="font-medium text-amber-800 dark:text-amber-300">Análise da IA</p>
+                <p className="text-amber-900 dark:text-amber-200">
+                  Ofensivo: {log.scoreOfensivo?.toFixed(2)}
+                </p>
+                <p className="text-amber-900 dark:text-amber-200">
+                  Spam: {log.scoreSpam?.toFixed(2)}
+                </p>
+                <p className="text-amber-900 dark:text-amber-200">
                   Dados pessoais: {log.scoreDadosPessoais?.toFixed(2)}
                 </p>
-                <p className="text-amber-900">
+                <p className="text-amber-900 dark:text-amber-200">
                   Fora de escopo: {log.scoreForaEscopo?.toFixed(2)}
                 </p>
-                <p className="text-amber-900">
+                <p className="text-amber-900 dark:text-amber-200">
                   Desinformação: {log.scoreDesinformacao?.toFixed(2)}
                 </p>
                 {log.coerenciaTextoImagem !== null && (
-                  <p className="text-amber-900">
+                  <p className="text-amber-900 dark:text-amber-200">
                     Coerência texto/imagem: {log.coerenciaTextoImagem?.toFixed(2)}
                   </p>
                 )}
                 {log.justificativa && (
-                  <p className="mt-1 italic text-amber-900">{log.justificativa}</p>
+                  <p className="mt-1 italic text-amber-900 dark:text-amber-200">
+                    {log.justificativa}
+                  </p>
                 )}
               </div>
             )}

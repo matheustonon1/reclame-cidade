@@ -3,54 +3,47 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { containerPagina, cartao } from "@/lib/estilos";
 
-import { exigirModerador } from "../exigir-moderador";
+import { exigirModerador } from "../../exigir-moderador";
 
 const LIMITE = 100;
 
 const DECISAO_ESTILO: Record<string, string> = {
   APROVAR: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400",
   REPROVAR: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400",
-  ENCAMINHAR_REVISAO: "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-400",
 };
 
 const DECISAO_LABEL: Record<string, string> = {
   APROVAR: "Aprovado",
   REPROVAR: "Reprovado",
-  ENCAMINHAR_REVISAO: "Encaminhado p/ revisão",
 };
 
-export default async function HistoricoModeracaoPage() {
+export default async function HistoricoModeracaoComentariosPage() {
   await exigirModerador();
 
   const logs = await prisma.logModeracao.findMany({
-    where: { alvoTipo: "RECLAMACAO" },
+    where: { alvoTipo: "COMENTARIO" },
     orderBy: { createdAt: "desc" },
     take: LIMITE,
     include: { revisadoPor: true },
   });
 
-  const reclamacoes = logs.length
-    ? await prisma.reclamacao.findMany({
+  const comentarios = logs.length
+    ? await prisma.comentario.findMany({
         where: { id: { in: logs.map((log) => log.alvoId) } },
-        select: { id: true, protocolo: true, titulo: true, status: true },
+        include: { reclamacao: { select: { protocolo: true, titulo: true } } },
       })
     : [];
-  const reclamacaoPorId = new Map(reclamacoes.map((r) => [r.id, r]));
+  const comentarioPorId = new Map(comentarios.map((c) => [c.id, c]));
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          Histórico de moderação
+          Histórico de moderação de comentários
         </h1>
-        <div className="flex gap-3">
-          <Link href="/moderacao/historico/comentarios" className="text-sm text-primary underline">
-            Comentários
-          </Link>
-          <Link href="/moderacao" className="text-sm text-primary underline">
-            Fila pendente
-          </Link>
-        </div>
+        <Link href="/moderacao/comentarios" className="text-sm text-primary underline">
+          Pendentes de revisão
+        </Link>
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">
         Últimas {LIMITE} decisões automáticas e humanas, mais recentes primeiro.
@@ -63,27 +56,29 @@ export default async function HistoricoModeracaoPage() {
       )}
 
       {logs.map((log) => {
-        const reclamacao = reclamacaoPorId.get(log.alvoId);
+        const comentario = comentarioPorId.get(log.alvoId);
 
         return (
           <div key={log.id} className={`flex flex-col gap-2 ${cartao}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                {reclamacao ? (
+                {comentario ? (
                   <Link
-                    href={`/reclamacoes/${reclamacao.protocolo}`}
+                    href={`/reclamacoes/${comentario.reclamacao.protocolo}`}
                     className="font-medium text-slate-900 hover:underline dark:text-slate-100"
                   >
-                    {reclamacao.titulo}
+                    {comentario.texto.length > 80
+                      ? `${comentario.texto.slice(0, 80)}…`
+                      : comentario.texto}
                   </Link>
                 ) : (
                   <p className="font-medium text-slate-400 dark:text-slate-500">
-                    (reclamação removida — {log.alvoId})
+                    (comentário removido — {log.alvoId})
                   </p>
                 )}
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {reclamacao?.protocolo} · {log.createdAt.toLocaleString("pt-BR")} ·
-                  {" "}v{log.versaoPrompt}
+                  {comentario && `em "${comentario.reclamacao.titulo}" · `}
+                  {log.createdAt.toLocaleString("pt-BR")} · v{log.versaoPrompt}
                   {log.latenciaMs != null && ` · ${log.latenciaMs}ms`}
                 </p>
               </div>
@@ -95,12 +90,9 @@ export default async function HistoricoModeracaoPage() {
             </div>
 
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              Geral: {log.scoreGeral.toFixed(2)} · Ofensivo: {log.scoreOfensivo?.toFixed(2)} ·
-              {" "}Spam: {log.scoreSpam?.toFixed(2)} · Dados pessoais: {log.scoreDadosPessoais?.toFixed(2)} ·
-              {" "}Fora de escopo: {log.scoreForaEscopo?.toFixed(2)} · Desinformação:{" "}
-              {log.scoreDesinformacao?.toFixed(2)}
-              {log.coerenciaTextoImagem !== null &&
-                ` · Coerência texto/imagem: ${log.coerenciaTextoImagem?.toFixed(2)}`}
+              Geral: {log.scoreGeral.toFixed(2)} · Ofensivo: {log.scoreOfensivo?.toFixed(2)} ·{" "}
+              Spam: {log.scoreSpam?.toFixed(2)} · Dados pessoais:{" "}
+              {log.scoreDadosPessoais?.toFixed(2)}
             </p>
 
             {log.justificativa && (
