@@ -43,3 +43,14 @@ export const DenunciaSchema = z.object({
     error: "É preciso confirmar que a denúncia é feita de boa-fé.",
   }),
 });
+
+export const ComentarioSchema = z.object({
+  texto: z
+    .string()
+    .trim()
+    .min(3, { error: "Comentário muito curto." })
+    .max(1000, { error: "Comentário muito longo (máx. 1000 caracteres)." }),
+  paiId: z
+    .union([z.literal(""), z.string()])
+    .transform((valor) => (valor === "" ? undefined : valor)),
+});

@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
 import { alternarConfirmacao, avaliarReclamacao, criarDenuncia, responderReclamacao } from "./actions";
+import { criarComentario } from "./comentarios";
 import { construirLinhaDoTempo } from "./linha-do-tempo";
 
 const MOTIVO_LABEL: Record<string, string> = {
@@ -95,24 +96,37 @@ export default async function ReclamacaoPage({
     reclamacao.avaliacao
   );
 
+  const comentarios = await prisma.comentario.findMany({
+    where: { reclamacaoId: reclamacao.id, paiId: null, statusModeracao: "APROVADO" },
+    orderBy: { createdAt: "asc" },
+    include: {
+      autor: true,
+      respostas: {
+        where: { statusModeracao: "APROVADO" },
+        orderBy: { createdAt: "asc" },
+        include: { autor: true },
+      },
+    },
+  });
+
   return (
     <main className={containerPagina}>
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           {reclamacao.titulo}
         </h1>
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
           <span>Protocolo {reclamacao.protocolo}</span>
           <StatusBadge status={reclamacao.status} />
         </div>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {reclamacao.categoria.nome} ·{" "}
           <Link href={`/cidades/${reclamacao.cidade.slug}`} className="text-primary underline">
             {reclamacao.cidade.nome}
           </Link>{" "}
           · {reclamacao.endereco}
         </p>
-        <p className="text-slate-800">{reclamacao.descricao}</p>
+        <p className="text-slate-800 dark:text-slate-200">{reclamacao.descricao}</p>
         {reclamacao.midias.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {reclamacao.midias.map((midia) => (
@@ -121,24 +135,24 @@ export default async function ReclamacaoPage({
                 key={midia.id}
                 src={midia.urlTratada ?? midia.url}
                 alt=""
-                className="h-40 w-40 rounded-lg border border-slate-200 object-cover"
+                className="h-40 w-40 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
               />
             ))}
           </div>
         )}
         {reclamacao.status === "REJEITADA" && reclamacao.motivoRejeicao && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-red-600 dark:text-red-400">
             Motivo da rejeição: {reclamacao.motivoRejeicao}
           </p>
         )}
         {reclamacao.status === "AGUARDANDO_REVISAO" && (
-          <p className="text-sm text-amber-600">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
             Esta reclamação foi encaminhada para revisão humana antes da
             publicação.
           </p>
         )}
         {erro === "email-nao-verificado" && (
-          <p className="text-sm text-amber-600">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
             Verifique seu e-mail antes de confirmar ou denunciar reclamações —
             reenvie o link em{" "}
             <Link href="/painel" className="underline">
@@ -161,13 +175,13 @@ export default async function ReclamacaoPage({
             {!denunciaAberta && (
               <details className="w-fit">
                 <summary
-                  className={`${botaoSecundario} inline-flex w-fit cursor-pointer list-none text-red-700`}
+                  className={`${botaoSecundario} inline-flex w-fit cursor-pointer list-none text-red-700 dark:text-red-400`}
                 >
                   Denunciar
                 </summary>
                 <form
                   action={criarDenuncia.bind(null, reclamacao.id, protocolo)}
-                  className={`mt-2 flex w-72 flex-col gap-2 ${cartao}`}
+                  className={`animate-fade-in mt-2 flex w-72 flex-col gap-2 ${cartao}`}
                 >
                   <select name="motivo" required defaultValue="" className={campoInput}>
                     <option value="" disabled>
@@ -185,7 +199,7 @@ export default async function ReclamacaoPage({
                     rows={2}
                     className={campoInput}
                   />
-                  <label className="flex items-start gap-2 text-xs text-slate-600">
+                  <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
                     <input
                       type="checkbox"
                       name="declaracaoVeracidade"
@@ -202,23 +216,27 @@ export default async function ReclamacaoPage({
             )}
           </div>
         )}
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {reclamacao._count.confirmacoes} pessoa(s) confirmaram este problema.
         </p>
       </div>
 
       {linhaDoTempo.length > 1 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold text-slate-900">Linha do tempo</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Linha do tempo
+          </h2>
           <ol className="flex flex-col gap-2">
             {linhaDoTempo.map((evento, indice) => (
               <li key={indice} className={cartao}>
-                <p className="font-medium text-slate-900">{evento.titulo}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{evento.titulo}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {evento.data.toLocaleString("pt-BR")}
                 </p>
                 {evento.descricao && (
-                  <p className="mt-1 text-sm text-slate-700">{evento.descricao}</p>
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                    {evento.descricao}
+                  </p>
                 )}
               </li>
             ))}
@@ -231,7 +249,9 @@ export default async function ReclamacaoPage({
           action={responderReclamacao.bind(null, reclamacao.id, protocolo)}
           className={`flex flex-col gap-2 ${cartao}`}
         >
-          <h2 className="font-semibold text-slate-900">Responder como órgão</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+            Responder como órgão
+          </h2>
           <textarea
             name="texto"
             required
@@ -257,7 +277,7 @@ export default async function ReclamacaoPage({
           action={avaliarReclamacao.bind(null, reclamacao.id, protocolo)}
           className={`flex flex-col gap-2 ${cartao}`}
         >
-          <h2 className="font-semibold text-slate-900">
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">
             O problema foi realmente resolvido?
           </h2>
           <select name="nota" required defaultValue="" className={campoInput}>
@@ -270,7 +290,7 @@ export default async function ReclamacaoPage({
               </option>
             ))}
           </select>
-          <div className="flex gap-4 text-sm text-slate-700">
+          <div className="flex gap-4 text-sm text-slate-700 dark:text-slate-300">
             <label className="flex items-center gap-1">
               <input type="radio" name="resolvido" value="true" required />
               Sim, foi resolvido
@@ -291,6 +311,90 @@ export default async function ReclamacaoPage({
           </button>
         </form>
       )}
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Comentários {comentarios.length > 0 && `(${comentarios.length})`}
+        </h2>
+
+        {session?.user && (
+          <form
+            action={criarComentario.bind(null, reclamacao.id, protocolo)}
+            className="flex flex-col gap-2"
+          >
+            <textarea
+              name="texto"
+              required
+              minLength={3}
+              maxLength={1000}
+              placeholder="Deixe um comentário"
+              rows={2}
+              className={campoInput}
+            />
+            <button type="submit" className={`${botaoSecundario} w-fit`}>
+              Comentar
+            </button>
+          </form>
+        )}
+
+        {comentarios.length === 0 && (
+          <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum comentário ainda.</p>
+        )}
+
+        {comentarios.map((comentario) => (
+          <div key={comentario.id} className={`flex flex-col gap-2 ${cartao}`}>
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+              {comentario.autor.name ?? comentario.autor.email}
+              <span className="ml-2 font-normal text-slate-400 dark:text-slate-500">
+                {comentario.createdAt.toLocaleString("pt-BR")}
+              </span>
+            </p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{comentario.texto}</p>
+
+            {session?.user && (
+              <details>
+                <summary className="w-fit cursor-pointer text-xs text-primary">
+                  Responder
+                </summary>
+                <form
+                  action={criarComentario.bind(null, reclamacao.id, protocolo)}
+                  className="animate-fade-in mt-2 flex flex-col gap-2"
+                >
+                  <input type="hidden" name="paiId" value={comentario.id} />
+                  <textarea
+                    name="texto"
+                    required
+                    minLength={3}
+                    maxLength={1000}
+                    placeholder="Escreva uma resposta"
+                    rows={2}
+                    className={campoInput}
+                  />
+                  <button type="submit" className={`${botaoSecundario} w-fit`}>
+                    Responder
+                  </button>
+                </form>
+              </details>
+            )}
+
+            {comentario.respostas.length > 0 && (
+              <div className="ml-4 flex flex-col gap-2 border-l border-slate-200 pl-4 dark:border-slate-700">
+                {comentario.respostas.map((resposta) => (
+                  <div key={resposta.id}>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {resposta.autor.name ?? resposta.autor.email}
+                      <span className="ml-2 font-normal text-slate-400 dark:text-slate-500">
+                        {resposta.createdAt.toLocaleString("pt-BR")}
+                      </span>
+                    </p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{resposta.texto}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
