@@ -1,6 +1,7 @@
 "use server";
 
 import { AuthError } from "next-auth";
+import bcrypt from "bcryptjs";
 
 import { signIn } from "@/auth";
 import { buscarUsuarioPorIdentificador } from "@/lib/identificador";
@@ -32,8 +33,13 @@ export async function login(
 
   // Pré-checagem só de UX: mostra o campo de código antes de tentar,
   // pra não fazer o usuário digitar a senha de novo. Quem realmente
-  // barra o login sem 2FA válido é o authorize() em auth.ts.
-  const precisaTotp = !!usuario?.totpConfirmadoEm;
+  // barra o login sem 2FA válido é o authorize() em auth.ts. Só decide
+  // isso depois de confirmar a senha - senão dá pra descobrir se uma
+  // conta existe e tem 2FA ativado testando identificadores com senha
+  // errada, sem nunca precisar acertá-la (enumeração de conta).
+  const senhaValida =
+    !!usuario?.senhaHash && (await bcrypt.compare(senha, usuario.senhaHash));
+  const precisaTotp = senhaValida && !!usuario?.totpConfirmadoEm;
   if (precisaTotp && (typeof codigoTotp !== "string" || codigoTotp.trim() === "")) {
     return { identificador, etapaTotp: true };
   }
