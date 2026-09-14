@@ -46,3 +46,29 @@ export type ExclusaoFormState =
       mensagem?: string;
     }
   | undefined;
+
+export const ConfirmarTotpSchema = z.object({
+  codigo: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, { error: "Informe os 6 dígitos do código." }),
+});
+
+export type ConfirmarTotpFormState =
+  | {
+      erros?: { codigo?: string[] };
+      mensagem?: string;
+      codigosBackup?: string[];
+    }
+  | undefined;
+
+export const DesativarTotpSchema = z.object({
+  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }),
+});
+
+export type DesativarTotpFormState =
+  | {
+      erros?: { senhaAtual?: string[] };
+      mensagem?: string;
+    }
+  | undefined;

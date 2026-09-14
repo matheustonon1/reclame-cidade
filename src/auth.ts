@@ -5,6 +5,14 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { buscarUsuarioPorIdentificador } from "@/lib/identificador";
+import {
+  codigoTotpValido,
+  consumirCodigoBackup,
+  decifrarSegredoTotp,
+  registrarFalhaTotp,
+  resetarFalhasTotp,
+  usuarioBloqueadoPorTotp,
+} from "@/lib/totp";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -17,6 +25,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         identificador: {},
         senha: {},
+        codigoTotp: {},
       },
       async authorize(credentials) {
         const identificador = credentials?.identificador;
@@ -41,6 +50,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const senhaValida = await bcrypt.compare(senha, usuario.senhaHash);
         if (!senhaValida) {
           return null;
+        }
+
+        if (usuario.totpConfirmadoEm) {
+          if (await usuarioBloqueadoPorTotp(usuario)) {
+            return null;
+          }
+
+          const codigo = credentials?.codigoTotp;
+          const segredo = decifrarSegredoTotp(usuario.totpSecret!);
+          const valido =
+            typeof codigo === "string" &&
+            codigo.length > 0 &&
+            ((await codigoTotpValido(segredo, codigo)) ||
+              (await consumirCodigoBackup(usuario.id, codigo)));
+
+          if (!valido) {
+            await registrarFalhaTotp(usuario.id, usuario.totpTentativasFalhas);
+            return null;
+          }
+
+          await resetarFalhasTotp(usuario.id);
         }
 
         return {

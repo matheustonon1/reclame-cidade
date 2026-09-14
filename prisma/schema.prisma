@@ -107,6 +107,17 @@ model User {
   cpfHash   String? @unique // apenas hash, nunca o CPF em texto
   telefone  String?
 
+  // 2FA por aplicativo autenticador (TOTP). totpSecret fica cifrado
+  // (AES-256-GCM, chave derivada de AUTH_SECRET) - nunca em texto puro,
+  // mas precisa ser reversível pra gerar o código a cada verificação
+  // (diferente de senhaHash/cpfHash, que só precisam de comparação).
+  // totpConfirmadoEm nulo = 2FA nunca confirmado (mesmo com secret
+  // pendente de configuração); não-nulo = 2FA ativo.
+  totpSecret           String?
+  totpConfirmadoEm     DateTime?
+  totpTentativasFalhas Int       @default(0)
+  totpBloqueadoAte     DateTime?
+
   papel            Papel            @default(CIDADAO)
   nivelVerificacao NivelVerificacao @default(NAO_VERIFICADO)
 
@@ -138,9 +149,26 @@ model User {
   denunciasAnalisadas Denuncia[]        @relation("DenunciasAnalisadas")
   moderacoesRevisadas LogModeracao[]    @relation("ModeracoesRevisadas")
   notificacoes        Notificacao[]
+  codigosBackupTotp   TotpBackupCode[]
 
   @@index([cidadeId])
   @@index([papel])
+}
+
+// Código de uso único pra quando o usuário perde acesso ao app
+// autenticador. Gerados em lote na confirmação do TOTP; cada um é
+// consumido (usadoEm) no primeiro uso e não pode ser reaproveitado.
+model TotpBackupCode {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  codigoHash String // hash bcrypt, nunca o código em texto puro
+  usadoEm    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Account {
