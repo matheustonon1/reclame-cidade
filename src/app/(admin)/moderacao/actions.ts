@@ -30,6 +30,18 @@ export async function aprovarReclamacao(reclamacaoId: string) {
     return;
   }
 
+  // Se o desfoque de rosto/placa falhou em alguma mídia (statusModeracao
+  // fica em REVISAO_HUMANA e urlTratada nunca é preenchida), aprovar
+  // aqui publicaria a foto crua. Recusa a aprovação até isso ser
+  // resolvido - a reclamação pode ser rejeitada, mas não publicada
+  // assim.
+  const midiaComBlurPendente = await prisma.midia.findFirst({
+    where: { reclamacaoId, statusModeracao: "REVISAO_HUMANA", urlTratada: null },
+  });
+  if (midiaComBlurPendente) {
+    return;
+  }
+
   const agora = new Date();
   const log = await buscarLogPendente(reclamacaoId);
 

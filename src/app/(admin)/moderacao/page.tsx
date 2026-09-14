@@ -60,6 +60,9 @@ export default async function ModeracaoPage() {
 
       {pendentes.map((reclamacao) => {
         const log = logPorReclamacao.get(reclamacao.id);
+        const blurPendente = reclamacao.midias.some(
+          (midia) => midia.statusModeracao === "REVISAO_HUMANA" && !midia.urlTratada
+        );
 
         return (
           <div key={reclamacao.id} className={`flex flex-col gap-2 ${cartao}`}>
@@ -119,9 +122,23 @@ export default async function ModeracaoPage() {
               </div>
             )}
 
+            {blurPendente && (
+              <p className="text-sm text-red-700 dark:text-red-400">
+                O desfoque automático falhou em pelo menos uma foto desta
+                reclamação (rosto ou placa detectados). Aprovar está
+                bloqueado até isso ser resolvido — rejeite se não puder
+                corrigir a imagem.
+              </p>
+            )}
+
             <div className="flex items-start gap-2">
               <form action={aprovarReclamacao.bind(null, reclamacao.id)}>
-                <button type="submit" className={botaoPrimario}>
+                <button
+                  type="submit"
+                  disabled={blurPendente}
+                  title={blurPendente ? "Desfoque pendente nesta reclamação" : undefined}
+                  className={botaoPrimario}
+                >
                   Aprovar
                 </button>
               </form>

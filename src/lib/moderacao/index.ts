@@ -108,7 +108,8 @@ export function decidir(
 
 // O modelo gratuito do Gemini retorna 503 (UNAVAILABLE) com frequência sob
 // alta demanda; essas falhas são transitórias e desaparecem em segundos.
-async function gerarConteudoComRetry(
+// Exportada pra moderarComentario() reaproveitar o mesmo retry.
+export async function gerarConteudoComRetry(
   parametros: Parameters<
     ReturnType<typeof getGeminiClient>["models"]["generateContent"]
   >[0],
@@ -223,7 +224,15 @@ export async function moderarReclamacao(
 
   const agora = new Date();
 
-  if (decisao === "APROVAR") {
+  // Aprovado pela IA mas com rosto/placa detectado ainda não pode ir ao
+  // ar: publicar aqui exporia a foto crua por uma janela de tempo (ou
+  // pra sempre, se o processo travar antes do chamador aplicar o blur).
+  // A publicação de verdade fica pra depois, em
+  // finalizarPublicacaoAprovada(), chamada só quando o desfoque tiver
+  // sido confirmado em todas as mídias sinalizadas.
+  const publicacaoAdiada = decisao === "APROVAR" && regioesSensiveis.length > 0;
+
+  if (decisao === "APROVAR" && !publicacaoAdiada) {
     await prisma.reclamacao.update({
       where: { id: reclamacao.id },
       data: {
@@ -238,6 +247,11 @@ export async function moderarReclamacao(
       titulo: "Reclamação publicada",
       mensagem: `Sua reclamação "${reclamacao.titulo}" foi publicada.`,
       reclamacaoId: reclamacao.id,
+    });
+  } else if (publicacaoAdiada) {
+    await prisma.reclamacao.update({
+      where: { id: reclamacao.id },
+      data: { scoreModeracao: scoreGeral },
     });
   } else if (decisao === "REPROVAR") {
     await prisma.reclamacao.update({
@@ -264,7 +278,10 @@ export async function moderarReclamacao(
 
   // statusModeracao de cada Midia espelha a decisão final — uma chamada
   // multimodal combinada por reclamação, não uma análise por imagem.
-  if (imagens.length > 0) {
+  // Quando a publicação foi adiada, a Midia fica pendente até o
+  // chamador confirmar o desfoque (finalizarPublicacaoAprovada) ou
+  // marcar falha nele mídia a mídia.
+  if (imagens.length > 0 && !publicacaoAdiada) {
     const statusMidia =
       decisao === "APROVAR"
         ? "APROVADO"
@@ -278,4 +295,33 @@ export async function moderarReclamacao(
   }
 
   return { decisao, regioesSensiveis };
+}
+
+// Chamada só quando moderarReclamacao() adiou a publicação (aprovada
+// pela IA, mas havia mídia com rosto/placa a desfocar) - o chamador
+// (criarReclamacao) roda isto depois de aplicar o blur com sucesso em
+// todas as mídias sinalizadas, e só então a reclamação vai ao ar.
+export async function finalizarPublicacaoAprovada(reclamacaoId: string) {
+  const reclamacao = await prisma.reclamacao.findUniqueOrThrow({
+    where: { id: reclamacaoId },
+  });
+
+  await prisma.$transaction([
+    prisma.reclamacao.update({
+      where: { id: reclamacaoId },
+      data: { status: "PUBLICADA", publicadaEm: new Date() },
+    }),
+    prisma.midia.updateMany({
+      where: { reclamacaoId },
+      data: { statusModeracao: "APROVADO" },
+    }),
+  ]);
+
+  await criarNotificacao({
+    userId: reclamacao.autorId,
+    tipo: "RECLAMACAO_PUBLICADA",
+    titulo: "Reclamação publicada",
+    mensagem: `Sua reclamação "${reclamacao.titulo}" foi publicada.`,
+    reclamacaoId,
+  });
 }

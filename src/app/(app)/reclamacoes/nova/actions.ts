@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { moderarReclamacao } from "@/lib/moderacao";
+import { finalizarPublicacaoAprovada, moderarReclamacao } from "@/lib/moderacao";
 import { gerarProtocolo } from "@/lib/protocolo";
 import { uploadImagem } from "@/lib/storage";
 import { aplicarBlur, calcularPhash, distanciaHamming, extrairExif } from "@/lib/imagem";
@@ -18,6 +18,7 @@ const MAX_TAMANHO_BYTES = 5 * 1024 * 1024;
 const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp"];
 const DISTANCIA_REPOSTAGEM = 8;
 const LIMITE_RECLAMACOES_DIA = 5;
+const JANELA_REPOSTAGEM_DIAS = 180;
 
 export async function criarReclamacao(
   _state: NovaReclamacaoFormState,
@@ -128,12 +129,20 @@ export async function criarReclamacao(
   // uma foto falhar ao subir, a reclamação ainda precisa ser moderada pelo
   // texto - não pode ficar travada em EM_MODERACAO só por causa da imagem.
   try {
+    // Janela de tempo limitada, não o histórico inteiro - sem isso, o
+    // custo desta consulta (e da comparação em memória logo abaixo)
+    // cresce sem limite conforme o app acumula mídia ao longo dos anos.
     const phashesExistentes =
       arquivos.length > 0
         ? (
             await prisma.midia.findMany({
-              where: { reclamacaoId: { not: reclamacao.id }, phash: { not: null } },
+              where: {
+                reclamacaoId: { not: reclamacao.id },
+                phash: { not: null },
+                createdAt: { gte: new Date(Date.now() - JANELA_REPOSTAGEM_DIAS * 86_400_000) },
+              },
               select: { phash: true },
+              orderBy: { createdAt: "desc" },
             })
           ).map((midia) => midia.phash!)
         : [];
@@ -188,6 +197,7 @@ export async function criarReclamacao(
     console.error("Falha ao processar imagens da reclamação:", erro);
   }
 
+  let decisaoModeracao: Awaited<ReturnType<typeof moderarReclamacao>>["decisao"] | null = null;
   let regioesSensiveis: Awaited<ReturnType<typeof moderarReclamacao>>["regioesSensiveis"] = [];
   try {
     const resultado = await moderarReclamacao(
@@ -198,6 +208,7 @@ export async function criarReclamacao(
       })),
       { possivelReposicao }
     );
+    decisaoModeracao = resultado.decisao;
     regioesSensiveis = resultado.regioesSensiveis;
   } catch (erro) {
     console.error("Falha na moderação automática:", erro);
@@ -250,6 +261,10 @@ export async function criarReclamacao(
       where: { id: reclamacao.id },
       data: { status: "AGUARDANDO_REVISAO" },
     });
+  } else if (decisaoModeracao === "APROVAR" && regioesSensiveis.length > 0) {
+    // moderarReclamacao() adiou a publicação por ter mídia sensível - só
+    // agora, com o desfoque confirmado em todas elas, publica de verdade.
+    await finalizarPublicacaoAprovada(reclamacao.id);
   }
 
   redirect(`/reclamacoes/${reclamacao.protocolo}`);
