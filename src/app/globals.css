@@ -147,3 +147,13 @@ body {
     animation: none;
   }
 }
+
+/* Evita que a troca de tema dispare a transicao de cor/sombra de cada
+   elemento da pagina ao mesmo tempo (dezenas de cards, botoes e inputs
+   com transition-colors) - sem isso, alternar o tema em paginas com
+   muitos elementos causa uma "lagada" visivel. */
+.theme-switching,
+.theme-switching * {
+  transition: none !important;
+  animation-play-state: paused !important;
+}

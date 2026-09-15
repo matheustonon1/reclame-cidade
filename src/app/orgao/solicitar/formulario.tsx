@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { SeletorCidade } from "@/components/cidade-combobox";
-import { botaoPrimario, campoInput, cartao } from "@/lib/estilos";
+import { botaoPrimario, botaoSecundario, campoInput, cartaoDestaque, linkSutil } from "@/lib/estilos";
 
 import { solicitarOrgao } from "./actions";
 
@@ -13,12 +13,12 @@ export function FormularioSolicitarOrgao() {
 
   if (state?.sucesso) {
     return (
-      <div className={`flex w-full max-w-sm flex-col items-center gap-3 text-center ${cartao}`}>
+      <div className={`flex flex-col items-center gap-3 text-center ${cartaoDestaque}`}>
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
           Solicitação enviada!
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">{state.mensagem}</p>
-        <Link href="/" className="text-sm text-primary underline">
+        <Link href="/" className={`${botaoSecundario} mt-1`}>
           Voltar para o início
         </Link>
       </div>
@@ -27,7 +27,7 @@ export function FormularioSolicitarOrgao() {
 
   return (
     <>
-      <form action={action} className={`flex w-full max-w-sm flex-col gap-3 ${cartao}`}>
+      <form action={action} className={`flex flex-col gap-3 ${cartaoDestaque}`}>
         <input
           type="text"
           name="nomeOrgao"
@@ -81,11 +81,13 @@ export function FormularioSolicitarOrgao() {
         <button type="submit" disabled={pending} className={botaoPrimario}>
           Enviar solicitação
         </button>
-      </form>
 
-      <Link href="/login" className="text-sm text-primary underline">
-        Já tem conta? Entrar
-      </Link>
+        <div className="mt-1 flex justify-center border-t border-slate-100 pt-4 dark:border-slate-800">
+          <Link href="/login" className={linkSutil}>
+            Já tem conta? <span className="font-semibold">Entrar</span>
+          </Link>
+        </div>
+      </form>
     </>
   );
 }

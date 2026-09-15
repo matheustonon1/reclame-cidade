@@ -10,4 +10,10 @@ export const campoInput =
 export const cartao =
   "rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900";
 
+export const cartaoDestaque =
+  "w-full rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-sm transition-colors dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/20";
+
+export const linkSutil =
+  "inline-flex items-center justify-center gap-1 rounded-full px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-primary dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400";
+
 export const containerPagina = "mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-6 sm:p-8";

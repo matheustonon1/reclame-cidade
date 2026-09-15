@@ -14,7 +14,7 @@ export function CadastroTipoSwitch({ tipoInicial }: { tipoInicial: TipoCadastro 
 
   return (
     <>
-      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+      <div className="flex w-full flex-col items-center gap-3 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           {ehOrgao ? "Solicitar acesso como órgão" : "Criar conta"}
         </h1>

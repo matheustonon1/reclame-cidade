@@ -24,12 +24,22 @@ export function ThemeToggle() {
   }, []);
 
   function alternar() {
-    const escuro = document.documentElement.classList.toggle("dark");
+    const raiz = document.documentElement;
+    // Desliga as transicoes de todo mundo por um frame para a troca de
+    // classe "dark" nao disparar dezenas de transition-colors ao mesmo
+    // tempo (isso que causava a lentidao ao alternar o tema).
+    raiz.classList.add("theme-switching");
+    const escuro = raiz.classList.toggle("dark");
     try {
       localStorage.setItem("tema", escuro ? "dark" : "light");
     } catch {
       // sem persistência disponível - o toggle ainda funciona na sessão atual
     }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        raiz.classList.remove("theme-switching");
+      });
+    });
   }
 
   return (
