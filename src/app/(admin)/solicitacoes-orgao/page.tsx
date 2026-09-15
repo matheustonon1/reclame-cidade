@@ -120,7 +120,7 @@ export default async function SolicitacoesOrgaoPage() {
         </div>
       )}
 
-      <Link href="/orgao/solicitar" className="text-sm text-primary underline">
+      <Link href="/cadastro?tipo=orgao" className="text-sm text-primary underline">
         Ver formulário público de solicitação
       </Link>
     </main>

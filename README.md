@@ -388,8 +388,10 @@ implementados — dependem da escolha de um provedor.
 ### Acesso de órgão
 
 Contas de órgão não são autoatendimento como a de cidadão: uma prefeitura
-ou secretaria solicita acesso em `/orgao/solicitar` (nome, cidade,
-responsável, contato), e a conta só é criada depois que um **ADMIN**
+ou secretaria solicita acesso em `/cadastro`, alternando para o modo
+"Órgão público" num switch animado (também acessível direto em
+`/orgao/solicitar`, que redireciona pra lá) — informa nome, cidade,
+responsável e contato —, e a conta só é criada depois que um **ADMIN**
 aprova o pedido em `/solicitacoes-orgao`. Na aprovação, o solicitante
 recebe um e-mail com link de uso único para definir a senha. Essa
 restrição existe porque uma conta de órgão pode postar "resposta

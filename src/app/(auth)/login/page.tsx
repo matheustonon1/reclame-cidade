@@ -51,7 +51,10 @@ export default function LoginPage() {
       <Link href="/cadastro" className="text-sm text-primary underline">
         Ainda não tem conta? Cadastre-se
       </Link>
-      <Link href="/orgao/solicitar" className="text-sm text-slate-500 underline dark:text-slate-400">
+      <Link
+        href="/cadastro?tipo=orgao"
+        className="text-sm text-slate-500 underline dark:text-slate-400"
+      >
         É um órgão público? Solicite acesso
       </Link>
     </main>
