@@ -9,16 +9,28 @@ export const NovaReclamacaoSchema = z.object({
   descricao: z
     .string()
     .trim()
-    .min(30, { error: "Descreva o problema com pelo menos 30 caracteres." }),
-  categoriaId: z.string().min(1, { error: "Selecione uma categoria." }),
-  cidadeId: z.string().min(1, { error: "Selecione a cidade." }),
+    .min(30, { error: "Descreva o problema com pelo menos 30 caracteres." })
+    .max(3000, { error: "Descrição muito longa (máx. 3000 caracteres)." }),
+  categoriaId: z.string().min(1, { error: "Selecione uma categoria." }).max(50),
+  cidadeId: z.string().min(1, { error: "Selecione a cidade." }).max(50),
   endereco: z
     .string()
     .trim()
     .min(5, { error: "Informe o endereço." })
     .max(255),
+  bairro: z
+    .string()
+    .trim()
+    .min(1, { error: "Informe o bairro." })
+    .max(120),
   referencia: z.string().trim().max(255).optional().or(z.literal("")),
-  cep: z.string().trim().max(9).optional().or(z.literal("")),
+  cep: z
+    .string()
+    .trim()
+    .regex(/^\d{5}-?\d{3}$/, { error: "Informe um CEP válido (00000-000)." }),
+  declaracaoVeracidade: z.literal("on", {
+    error: "É preciso declarar que as informações são verdadeiras.",
+  }),
 });
 
 export type NovaReclamacaoFormState =
@@ -29,8 +41,10 @@ export type NovaReclamacaoFormState =
         categoriaId?: string[];
         cidadeId?: string[];
         endereco?: string[];
+        bairro?: string[];
         referencia?: string[];
         cep?: string[];
+        declaracaoVeracidade?: string[];
       };
       mensagem?: string;
     }

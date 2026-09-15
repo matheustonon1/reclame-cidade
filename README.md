@@ -10,6 +10,17 @@ Trabalho de Conclusão de Curso.
 
 O sistema permite que cidadãos registrem reclamações sobre problemas urbanos do seu município — buracos na via, iluminação pública, coleta de lixo, saneamento, transporte — anexando texto e imagens. Órgãos públicos cadastrados podem responder oficialmente e atualizar o status de cada ocorrência, e os cidadãos avaliam se o problema foi de fato resolvido.
 
+Além do fluxo básico de reclamação → moderação → resposta oficial, a plataforma inclui:
+
+- **Feed público por cidade**, com filtros por categoria/status e ordenação por recência ou confirmações da comunidade ("também sofro com isso")
+- **Reputação pública por órgão**, nos moldes do Reclame Aqui: selo (Ótimo/Bom/Regular/Ruim) calculado a partir do índice de resolução, tempo médio de resposta e nota dos cidadãos
+- **Comentários em cada reclamação**, moderados por IA, com fila de revisão humana para corrigir falsos positivos sem depender só da decisão automática
+- **Autenticação em duas etapas (TOTP)** por aplicativo autenticador, com códigos de backup de uso único
+- **Tema claro/escuro** com preferência persistida por usuário
+- **Cadastro de órgão com aprovação**: prefeituras/secretarias solicitam acesso publicamente, um ADMIN aprova ou rejeita, e só então a conta é criada e um link de definição de senha é enviado
+- **Dashboard de estatísticas de moderação**: taxa de aprovação, score médio por eixo, volume por dia e concordância entre a IA e a revisão humana
+- **Recurso contra rejeição**: o autor pode contestar uma vez a rejeição de uma reclamação, encaminhando-a para revisão humana com o motivo original e o argumento do autor lado a lado
+
 O diferencial técnico é o **pipeline de moderação automatizada**: todo conteúdo submetido passa por uma sequência de verificações antes de ser publicado, combinando checagens determinísticas com análise por modelo de linguagem multimodal.
 
 ### O que a moderação verifica
@@ -36,12 +47,18 @@ A validação factual é delegada a um mecanismo de **corroboração comunitári
 | Camada | Tecnologia |
 |---|---|
 | Front-end | React via Next.js (App Router), TypeScript |
-| Estilização | Tailwind CSS, shadcn/ui |
-| Back-end | Next.js Route Handlers |
+| Estilização | Tailwind CSS (design system próprio, sem biblioteca de componentes) |
+| Back-end | Next.js Route Handlers e Server Actions |
 | Banco de dados | MySQL 8.4 |
 | ORM | Prisma 6 |
-| Autenticação | Auth.js (NextAuth) |
-| Moderação | API de LLM multimodal |
+| Autenticação | Auth.js (NextAuth), login por e-mail ou CPF |
+| Moderação | API de LLM multimodal (Gemini) |
+| Armazenamento de imagem | Vercel Blob |
+| Processamento de imagem | sharp (redimensionamento/desfoque), blockhash-core (hash perceptual), exifr (metadados EXIF) |
+| Autenticação em duas etapas | otplib (TOTP) + qrcode (QR code de configuração) |
+| Envio de e-mail | Resend (opcional — sem chave configurada, o link de verificação fica no log do servidor) |
+| Antifake no cadastro | Cloudflare Turnstile (opcional) |
+| Testes | Vitest (unitários) + Playwright (verificação end-to-end ad hoc durante o desenvolvimento) |
 | Infraestrutura local | Docker Compose |
 
 As versões do Prisma estão fixadas propositalmente. A CLI passou por reestruturação em versões posteriores, com mudança de comandos e de formato de configuração. Fixar a versão garante reprodutibilidade do ambiente ao longo do desenvolvimento e na avaliação do trabalho.
@@ -99,6 +116,7 @@ Abra o `.env` e preencha:
 DATABASE_URL="mysql://root:root@localhost:3306/reclame_cidade"
 AUTH_SECRET="cole-aqui-uma-chave-gerada"
 GEMINI_API_KEY="sua-chave-da-api"
+BLOB_READ_WRITE_TOKEN="seu-token-do-vercel-blob"
 ```
 
 Para gerar o `AUTH_SECRET`:
@@ -106,6 +124,30 @@ Para gerar o `AUTH_SECRET`:
 ```bash
 npx auth secret
 ```
+
+O `BLOB_READ_WRITE_TOKEN` é necessário para o upload de imagem nas
+reclamações. Crie um Blob store gratuito em
+[vercel.com](https://vercel.com) → Storage → Create → Blob e copie o
+token — funciona em desenvolvimento local, não é preciso publicar o
+projeto na Vercel para testar. Sem essa variável, o restante do app
+funciona normalmente; só o envio de fotos falha.
+
+`NEXT_PUBLIC_APP_URL` é opcional (usada para montar o link no e-mail de
+verificação de conta). Default: `http://localhost:3000`.
+
+`RESEND_API_KEY` e `RESEND_FROM_EMAIL` são opcionais — ativam o envio
+real do e-mail de verificação via [Resend](https://resend.com) (plano
+grátis: 3.000 e-mails/mês). Sem `RESEND_API_KEY`, o link de verificação
+só aparece no log do servidor, o que já é suficiente para desenvolver.
+Sem domínio próprio verificado no Resend, `RESEND_FROM_EMAIL` pode ficar
+em branco (usa `onboarding@resend.dev`), mas nesse caso só entrega para
+o e-mail cadastrado na sua conta Resend.
+
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY` são opcionais
+(proteção antifake no cadastro) — crie uma chave grátis em
+[dash.cloudflare.com](https://dash.cloudflare.com) → Turnstile → Add
+site. Sem essas variáveis, o cadastro funciona normalmente, só sem
+verificação de bot.
 
 O arquivo `.env` está no `.gitignore` e **nunca deve ser versionado**.
 
@@ -160,6 +202,7 @@ npm run dev      # ambiente de desenvolvimento
 npm run build    # build de produção
 npm run start    # executa o build
 npm run lint     # verificação de código
+npm test         # roda os testes automatizados (Vitest)
 ```
 
 ### Banco de dados
@@ -199,19 +242,36 @@ reclame-cidade/
 ├── prisma/
 │   ├── schema.prisma        # modelo de dados
 │   ├── migrations/          # histórico versionado do banco
-│   └── seed.ts              # dados iniciais
+│   └── seed.ts              # dados iniciais (geografia, categorias, admin/órgão demo)
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/          # login e cadastro
-│   │   ├── (app)/           # área autenticada
-│   │   ├── (admin)/         # painel de moderação
-│   │   └── api/             # rotas de API
-│   ├── components/
-│   │   └── ui/              # componentes shadcn/ui
+│   │   ├── (auth)/          # login (com 2FA), cadastro e verificação de e-mail
+│   │   ├── (app)/           # área autenticada (painel, conta + 2FA, reclamações, órgão)
+│   │   ├── (admin)/         # moderação humana, estatísticas, denúncias e aprovação de órgão
+│   │   ├── cidades/         # feed público por cidade (filtros, ranking de órgãos, índice de resolução)
+│   │   ├── orgaos/          # perfil público de reputação por órgão
+│   │   ├── orgao/           # solicitação pública de acesso e definição de senha
+│   │   ├── reclamacoes/     # feed público global (busca por cidade/palavra-chave)
+│   │   ├── termos/          # Termos de Uso e Política de Privacidade
+│   │   └── api/             # rotas de API (busca de cidade, consulta de CEP)
+│   ├── components/          # UI compartilhada (header, menus, badges, combobox de cidade, tema, modal de termos)
 │   ├── lib/
 │   │   ├── prisma.ts        # instância única do Prisma Client
 │   │   ├── auth.ts          # configuração do Auth.js
-│   │   └── moderacao/       # pipeline de moderação por IA
+│   │   ├── moderacao/       # pipeline de moderação por IA (texto + imagem)
+│   │   ├── moderacaoComentario.ts # moderação de comentários (mais leve que a de reclamações)
+│   │   ├── imagem.ts        # phash, EXIF e desfoque de rosto/placa
+│   │   ├── storage.ts       # upload para o Vercel Blob
+│   │   ├── cpf.ts           # validação e hash do CPF
+│   │   ├── totp.ts          # segredo TOTP cifrado, QR code e códigos de backup do 2FA
+│   │   ├── email.ts         # token e envio (Resend, opcional) do e-mail de verificação
+│   │   ├── notificacoes.ts  # criação de notificações in-app
+│   │   ├── identificador.ts # busca de usuário por e-mail ou CPF
+│   │   ├── verificacao.ts   # regra de e-mail obrigatório p/ confirmar e denunciar
+│   │   ├── turnstile.ts     # verificação antifake do Cloudflare Turnstile
+│   │   ├── protocolo.ts     # geração do número de protocolo (RC-AAAA-NNNNNNN)
+│   │   ├── tempo-relativo.ts # formatação de datas relativas ("há 2 dias")
+│   │   └── reputacaoOrgao.ts # métricas e selo de reputação por órgão
 │   └── types/
 ├── public/
 ├── docker-compose.yml
@@ -308,11 +368,64 @@ O repositório inclui `.vscode/extensions.json` com as extensões sugeridas. O V
 
 O sistema trata dados pessoais e observa a Lei Geral de Proteção de Dados (Lei nº 13.709/2018):
 
+- Consentimento explícito aos Termos de Uso e à Política de Privacidade no cadastro (`/termos`)
 - Coleta mínima de dados no cadastro
 - Documentos de identificação, quando utilizados na verificação, são armazenados apenas em forma de hash
 - Imagens submetidas passam por detecção de rostos e placas veiculares, com desfoque automático
-- Exclusão de conta e dos dados associados disponível ao usuário
+- Edição de dados cadastrais e troca de senha disponíveis em "Minha conta"
+- Exclusão de conta disponível ao usuário — anonimiza os dados pessoais; reclamações já publicadas são mantidas como registro de interesse público, sem identificação do autor
 - Registros de moderação mantidos para fins de auditoria e recurso
+
+### Autenticação em duas etapas
+
+Qualquer usuário pode ativar 2FA por aplicativo autenticador (Google
+Authenticator, Authy etc.) em "Minha conta". O segredo TOTP é cifrado em
+repouso (AES-256-GCM, chave derivada de `AUTH_SECRET`) — nunca fica em
+texto puro no banco. Códigos de backup de uso único cobrem a perda do
+dispositivo, e o login bloqueia temporariamente após 5 tentativas de
+código incorretas. SMS e e-mail como segundo fator ainda não foram
+implementados — dependem da escolha de um provedor.
+
+### Acesso de órgão
+
+Contas de órgão não são autoatendimento como a de cidadão: uma prefeitura
+ou secretaria solicita acesso em `/cadastro`, alternando para o modo
+"Órgão público" num switch animado (também acessível direto em
+`/orgao/solicitar`, que redireciona pra lá) — informa nome, cidade,
+responsável e contato —, e a conta só é criada depois que um **ADMIN**
+aprova o pedido em `/solicitacoes-orgao`. Na aprovação, o solicitante
+recebe um e-mail com link de uso único para definir a senha. Essa
+restrição existe porque uma conta de órgão pode postar "resposta
+oficial" em nome da prefeitura — o mesmo nível de confiança já exigido
+para banir usuário. O `seed.ts` continua criando um órgão de demonstração
+pronto (veja `SEED_ORGAO_EMAIL`/`SEED_ORGAO_SENHA`), útil para testar sem
+passar pelo fluxo de aprovação.
+
+Por padrão, um órgão vê e pode responder qualquer reclamação da sua
+cidade. Um **ADMIN** pode restringir isso em `/orgaos-categorias`,
+atribuindo categorias específicas a cada órgão (ex.: só "Buracos e
+pavimentação" para a Secretaria de Obras) — um órgão sem nenhuma
+categoria atribuída continua no comportamento padrão (atende tudo).
+
+### Integridade de conta e antifake
+
+Como a plataforma lida com reclamações sobre a cidade — incluindo, indiretamente, sobre a gestão pública —, ela é um alvo natural de manipulação coordenada (contas falsas para inflar ou forjar corroboração comunitária). As medidas atuais são de integridade de conta/comportamento, não de moderação de conteúdo político:
+
+- CPF único por conta (hash) e Cloudflare Turnstile no cadastro (opcional)
+- Limite de contas criadas por IP e de reclamações/denúncias por usuário
+- E-mail verificado obrigatório para confirmar ("também sofro com isso") e denunciar, com contas anteriores à regra isentas
+- Rajada de confirmações fora do padrão gera alerta para moderador/admin — nunca ação automática; um problema real pode legitimamente viralizar, então a decisão final é sempre humana
+- Denúncia de conteúdo publicado (`/denuncias`) e banimento de usuário (restrito a ADMIN) como consequência
+
+### Segurança de aplicação
+
+- Acesso a banco de dados é 100% via Prisma (query builder parametrizado) — não há SQL bruto em nenhum ponto do código, então injeção de SQL não é uma superfície de ataque válida aqui.
+- Bloqueio temporário por força bruta de senha (`loginTentativasFalhas`/`loginBloqueadoAte` no `User`, 5 tentativas / 15 min), independente do bloqueio já existente para código TOTP.
+- Limite de solicitações por IP/hora em endpoints públicos e não autenticados que gravam no banco (cadastro de conta, solicitação de acesso de órgão).
+- Todo campo de texto livre em formulários tem tamanho máximo validado via Zod (não só mínimo) — evita payloads desproporcionais e custo desnecessário com a API de IA.
+- Cabeçalhos HTTP de segurança (`next.config.ts`): Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy e Permissions-Policy em todas as rotas.
+- Moderação por IA (`lib/moderacao`, `lib/moderacaoComentario`): o texto do usuário é isolado no prompt por marcadores explícitos com instrução para nunca seguir comandos embutidos nele (mitiga prompt injection), e a resposta do modelo é revalidada com Zod (não só o `responseSchema` do Gemini) — qualquer score fora de 0-1 ou formato inesperado falha para revisão humana em vez de aprovar por engano ou travar a reclamação sem rastro.
+- DDoS volumétrico (inundação de tráfego na camada de rede) não é algo que código de aplicação resolve sozinho — isso depende de proteção na borda (Cloudflare, WAF do provedor de hospedagem, etc.); o que este projeto controla é o abuso a nível de aplicação (força bruta, spam de formulário, payloads grandes).
 
 ---
 

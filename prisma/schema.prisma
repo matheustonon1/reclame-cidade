@@ -80,6 +80,12 @@ enum StatusDenuncia {
   IMPROCEDENTE
 }
 
+enum StatusSolicitacaoOrgao {
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
 enum TipoNotificacao {
   RECLAMACAO_PUBLICADA
   RECLAMACAO_REJEITADA
@@ -87,6 +93,7 @@ enum TipoNotificacao {
   MUDANCA_STATUS
   NOVO_COMENTARIO
   PEDIDO_AVALIACAO
+  ATIVIDADE_SUSPEITA
 }
 
 // ===========================================================================
@@ -106,6 +113,23 @@ model User {
   cpfHash   String? @unique // apenas hash, nunca o CPF em texto
   telefone  String?
 
+  // 2FA por aplicativo autenticador (TOTP). totpSecret fica cifrado
+  // (AES-256-GCM, chave derivada de AUTH_SECRET) - nunca em texto puro,
+  // mas precisa ser reversível pra gerar o código a cada verificação
+  // (diferente de senhaHash/cpfHash, que só precisam de comparação).
+  // totpConfirmadoEm nulo = 2FA nunca confirmado (mesmo com secret
+  // pendente de configuração); não-nulo = 2FA ativo.
+  totpSecret           String?
+  totpConfirmadoEm     DateTime?
+  totpTentativasFalhas Int       @default(0)
+  totpBloqueadoAte     DateTime?
+
+  // Contador de força bruta de SENHA (independente do de TOTP acima) -
+  // sem isso, uma conta sem 2FA ativo podia ter a senha adivinhada por
+  // tentativa e erro sem nenhum limite além da lentidão natural do bcrypt.
+  loginTentativasFalhas Int       @default(0)
+  loginBloqueadoAte     DateTime?
+
   papel            Papel            @default(CIDADAO)
   nivelVerificacao NivelVerificacao @default(NAO_VERIFICADO)
 
@@ -119,6 +143,9 @@ model User {
 
   ativo     Boolean   @default(true)
   banidoAte DateTime?
+
+  termosAceitosEm DateTime? // consentimento de termos/LGPD no cadastro
+  criadoDeIp      String? // usado só pra limite de contas por IP
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,9 +161,27 @@ model User {
   denunciasAnalisadas Denuncia[]        @relation("DenunciasAnalisadas")
   moderacoesRevisadas LogModeracao[]    @relation("ModeracoesRevisadas")
   notificacoes        Notificacao[]
+  codigosBackupTotp   TotpBackupCode[]
+  solicitacoesOrgaoAnalisadas SolicitacaoOrgao[]
 
   @@index([cidadeId])
   @@index([papel])
+}
+
+// Código de uso único pra quando o usuário perde acesso ao app
+// autenticador. Gerados em lote na confirmação do TOTP; cada um é
+// consumido (usadoEm) no primeiro uso e não pode ser reaproveitado.
+model TotpBackupCode {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  codigoHash String // hash bcrypt, nunca o código em texto puro
+  usadoEm    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Account {
@@ -199,10 +244,11 @@ model Cidade {
   estadoId   String
   estado     Estado @relation(fields: [estadoId], references: [id])
 
-  bairros     Bairro[]
-  usuarios    User[]
-  reclamacoes Reclamacao[]
-  orgaos      Orgao[]
+  bairros            Bairro[]
+  usuarios           User[]
+  reclamacoes        Reclamacao[]
+  orgaos             Orgao[]
+  solicitacoesOrgao  SolicitacaoOrgao[]
 
   @@index([estadoId])
   @@index([nome])
@@ -235,6 +281,7 @@ model Categoria {
   ordem     Int     @default(0)
 
   reclamacoes Reclamacao[]
+  orgaos      Orgao[]
 }
 
 model Orgao {
@@ -246,10 +293,48 @@ model Orgao {
   cidade   Cidade  @relation(fields: [cidadeId], references: [id])
   ativo    Boolean @default(true)
 
+  // Categorias de reclamação que este órgão atende. Vazio = atende
+  // qualquer categoria da cidade (comportamento antigo, preservado como
+  // padrão pra não esvaziar a fila de órgãos já existentes/sem
+  // configuração) - só passa a ficar restrito quando um ADMIN atribuir
+  // ao menos uma categoria em /orgaos-categorias.
+  categorias Categoria[]
+
   responsaveis User[]
   respostas    RespostaOficial[]
 
+  @@unique([cidadeId, nome])
   @@index([cidadeId])
+}
+
+// Pedido público de acesso como órgão - não cria a conta direto (ao
+// contrário do cadastro de cidadão). Uma conta de órgão pode postar
+// "resposta oficial" em nome da prefeitura, então precisa de aprovação
+// humana (ADMIN) antes de existir de verdade.
+model SolicitacaoOrgao {
+  id String @id @default(cuid())
+
+  nomeOrgao String
+  sigla     String?
+  cidadeId  String
+  cidade    Cidade  @relation(fields: [cidadeId], references: [id])
+
+  nomeResponsavel String
+  email           String
+  telefone        String?
+  criadoDeIp      String? // usado só pra limite de solicitações por IP
+
+  status         StatusSolicitacaoOrgao @default(PENDENTE)
+  motivoRejeicao String?                @db.Text
+
+  analisadoPorId String?
+  analisadoPor   User?     @relation(fields: [analisadoPorId], references: [id])
+  analisadoEm    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([cidadeId])
+  @@index([status])
 }
 
 // ===========================================================================
@@ -282,7 +367,12 @@ model Reclamacao {
   status         StatusReclamacao @default(EM_MODERACAO)
   scoreModeracao Float?
   motivoRejeicao String?          @db.Text
+  // emRecurso vira true no primeiro (e único) recurso do autor contra
+  // uma rejeição - permite um só, pra não virar loop de novas tentativas
+  // sobre o mesmo conteúdo. textoRecurso é o argumento do cidadão,
+  // mostrado ao lado do motivoRejeicao original na fila de moderação.
   emRecurso      Boolean          @default(false)
+  textoRecurso   String?          @db.Text
 
   visualizacoes Int @default(0)
 
