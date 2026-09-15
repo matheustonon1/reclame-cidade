@@ -9,9 +9,10 @@ export const NovaReclamacaoSchema = z.object({
   descricao: z
     .string()
     .trim()
-    .min(30, { error: "Descreva o problema com pelo menos 30 caracteres." }),
-  categoriaId: z.string().min(1, { error: "Selecione uma categoria." }),
-  cidadeId: z.string().min(1, { error: "Selecione a cidade." }),
+    .min(30, { error: "Descreva o problema com pelo menos 30 caracteres." })
+    .max(3000, { error: "Descrição muito longa (máx. 3000 caracteres)." }),
+  categoriaId: z.string().min(1, { error: "Selecione uma categoria." }).max(50),
+  cidadeId: z.string().min(1, { error: "Selecione a cidade." }).max(50),
   endereco: z
     .string()
     .trim()

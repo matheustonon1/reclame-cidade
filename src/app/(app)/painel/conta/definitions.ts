@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const PerfilSchema = z.object({
-  nome: z.string().trim().min(2, { error: "Informe seu nome completo." }),
+  nome: z.string().trim().min(2, { error: "Informe seu nome completo." }).max(100),
   telefone: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
@@ -14,11 +14,12 @@ export type PerfilFormState =
 
 export const SenhaSchema = z
   .object({
-    senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }),
+    senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }).max(100),
     novaSenha: z
       .string()
-      .min(8, { error: "A nova senha deve ter ao menos 8 caracteres." }),
-    confirmarNovaSenha: z.string(),
+      .min(8, { error: "A nova senha deve ter ao menos 8 caracteres." })
+      .max(100),
+    confirmarNovaSenha: z.string().max(100),
   })
   .refine((dados) => dados.novaSenha === dados.confirmarNovaSenha, {
     error: "As senhas não conferem.",
@@ -37,7 +38,7 @@ export type SenhaFormState =
   | undefined;
 
 export const ExclusaoSchema = z.object({
-  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }),
+  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }).max(100),
 });
 
 export type ExclusaoFormState =
@@ -63,7 +64,7 @@ export type ConfirmarTotpFormState =
   | undefined;
 
 export const DesativarTotpSchema = z.object({
-  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }),
+  senhaAtual: z.string().min(1, { error: "Informe sua senha atual." }).max(100),
 });
 
 export type DesativarTotpFormState =

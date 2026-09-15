@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 
 import { signIn } from "@/auth";
 import { buscarUsuarioPorIdentificador } from "@/lib/identificador";
+import { usuarioBloqueadoPorLogin } from "@/lib/loginSeguranca";
 
 export type LoginFormState =
   | {
@@ -25,10 +26,18 @@ export async function login(
   if (typeof identificador !== "string" || typeof senha !== "string") {
     return { erro: "Informe e-mail/CPF e senha." };
   }
+  if (identificador.length > 254 || senha.length > 100) {
+    return { erro: "E-mail/CPF ou senha inválidos." };
+  }
 
   const usuario = await buscarUsuarioPorIdentificador(identificador);
   if (usuario?.banidoAte && usuario.banidoAte > new Date()) {
     return { erro: "Esta conta está suspensa." };
+  }
+  if (usuario && usuarioBloqueadoPorLogin(usuario)) {
+    return {
+      erro: "Muitas tentativas de login incorretas. Aguarde alguns minutos e tente novamente.",
+    };
   }
 
   // Pré-checagem só de UX: mostra o campo de código antes de tentar,

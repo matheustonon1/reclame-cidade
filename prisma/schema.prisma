@@ -124,6 +124,12 @@ model User {
   totpTentativasFalhas Int       @default(0)
   totpBloqueadoAte     DateTime?
 
+  // Contador de força bruta de SENHA (independente do de TOTP acima) -
+  // sem isso, uma conta sem 2FA ativo podia ter a senha adivinhada por
+  // tentativa e erro sem nenhum limite além da lentidão natural do bcrypt.
+  loginTentativasFalhas Int       @default(0)
+  loginBloqueadoAte     DateTime?
+
   papel            Papel            @default(CIDADAO)
   nivelVerificacao NivelVerificacao @default(NAO_VERIFICADO)
 
@@ -308,6 +314,7 @@ model SolicitacaoOrgao {
   nomeResponsavel String
   email           String
   telefone        String?
+  criadoDeIp      String? // usado só pra limite de solicitações por IP
 
   status         StatusSolicitacaoOrgao @default(PENDENTE)
   motivoRejeicao String?                @db.Text

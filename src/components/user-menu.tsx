@@ -50,7 +50,7 @@ export function UserMenu({
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white dark:bg-blue-600">
           {iniciais}
         </span>
-        <span className="hidden sm:inline">{nome}</span>
+        <span className="hidden max-w-40 truncate sm:inline">{nome}</span>
         <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden />
       </button>
 

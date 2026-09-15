@@ -6,6 +6,11 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { buscarUsuarioPorIdentificador } from "@/lib/identificador";
 import {
+  registrarFalhaLogin,
+  resetarFalhasLogin,
+  usuarioBloqueadoPorLogin,
+} from "@/lib/loginSeguranca";
+import {
   codigoTotpValido,
   consumirCodigoBackup,
   decifrarSegredoTotp,
@@ -47,10 +52,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const senhaValida = await bcrypt.compare(senha, usuario.senhaHash);
-        if (!senhaValida) {
+        if (usuarioBloqueadoPorLogin(usuario)) {
           return null;
         }
+
+        const senhaValida = await bcrypt.compare(senha, usuario.senhaHash);
+        if (!senhaValida) {
+          await registrarFalhaLogin(usuario.id);
+          return null;
+        }
+        await resetarFalhasLogin(usuario.id);
 
         if (usuario.totpConfirmadoEm) {
           if (await usuarioBloqueadoPorTotp(usuario)) {
