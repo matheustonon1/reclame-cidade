@@ -55,8 +55,6 @@ export async function SiteHeader() {
             Reclamações
           </Link>
 
-          <ThemeToggle />
-
           {usuario ? (
             <>
               <NotificacoesSino
@@ -91,6 +89,8 @@ export async function SiteHeader() {
               </Link>
             </>
           )}
+
+          <ThemeToggle />
         </nav>
       </div>
     </header>
