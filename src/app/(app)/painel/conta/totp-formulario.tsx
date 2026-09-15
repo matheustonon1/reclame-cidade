@@ -102,18 +102,26 @@ export function FormularioTotp({
         <p className="text-sm text-green-700 dark:text-green-400">
           Ativada por aplicativo autenticador.
         </p>
-        <form action={actionDesativar} className="flex flex-col gap-2">
-          <input
-            type="password"
-            name="senhaAtual"
-            placeholder="Confirme sua senha para desativar"
-            className={campoInput}
-          />
-          {stateDesativar?.erros?.senhaAtual && (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {stateDesativar.erros.senhaAtual[0]}
-            </p>
-          )}
+        <form action={actionDesativar} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="totp-senha-desativar"
+              className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Confirme sua senha para desativar
+            </label>
+            <input
+              id="totp-senha-desativar"
+              type="password"
+              name="senhaAtual"
+              className={campoInput}
+            />
+            {stateDesativar?.erros?.senhaAtual && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {stateDesativar.erros.senhaAtual[0]}
+              </p>
+            )}
+          </div>
           {stateDesativar?.mensagem && (
             <p className="text-sm text-slate-600 dark:text-slate-400">
               {stateDesativar.mensagem}

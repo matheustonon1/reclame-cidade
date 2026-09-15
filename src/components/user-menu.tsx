@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 import { sair } from "@/app/(app)/painel/actions";
+import { iniciaisDoNome } from "@/lib/texto";
 
 export function UserMenu({
   nome,
@@ -32,12 +33,7 @@ export function UserMenu({
     return () => document.removeEventListener("mousedown", aoClicarFora);
   }, []);
 
-  const iniciais = nome
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((parte) => parte[0]?.toUpperCase())
-    .join("");
+  const iniciais = iniciaisDoNome(nome);
 
   return (
     <div ref={containerRef} className="relative">
