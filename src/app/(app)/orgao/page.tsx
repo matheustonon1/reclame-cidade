@@ -24,7 +24,13 @@ export default async function PainelOrgaoPage() {
 
   const orgao = await prisma.orgao.findUnique({
     where: { id: session.user.orgaoId! },
+    include: { categorias: { select: { id: true, nome: true } } },
   });
+
+  // categoriasIds null = orgao sem categoria atribuida, atende qualquer
+  // uma da cidade (ver orgaoAtendeCategoria em lib/orgaoCategoria.ts).
+  const categoriaIds =
+    orgao && orgao.categorias.length > 0 ? orgao.categorias.map((c) => c.id) : null;
 
   const [pendentes, metricas, historico] = await Promise.all([
     orgao
@@ -32,6 +38,7 @@ export default async function PainelOrgaoPage() {
           where: {
             cidadeId: orgao.cidadeId,
             status: { in: ["PUBLICADA", "EM_ANDAMENTO"] },
+            ...(categoriaIds ? { categoriaId: { in: categoriaIds } } : {}),
           },
           orderBy: { publicadaEm: "asc" },
           include: { categoria: true },
@@ -66,9 +73,18 @@ export default async function PainelOrgaoPage() {
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-        Painel do órgão{orgao ? ` — ${orgao.nome}` : ""}
-      </h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          Painel do órgão{orgao ? ` — ${orgao.nome}` : ""}
+        </h1>
+        {orgao && (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {categoriaIds
+              ? `Atende: ${orgao.categorias.map((c) => c.nome).join(", ")}`
+              : "Atende todas as categorias desta cidade (nenhuma categoria específica atribuída)."}
+          </p>
+        )}
+      </div>
 
       {orgao && metricas && classificacao && (
         <div className={`flex flex-col gap-3 ${cartao}`}>

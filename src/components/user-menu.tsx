@@ -110,13 +110,22 @@ export function UserMenu({
                 Denúncias
               </Link>
               {ehAdmin && (
-                <Link
-                  href="/solicitacoes-orgao"
-                  onClick={() => setAberto(false)}
-                  className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  Solicitações de órgão
-                </Link>
+                <>
+                  <Link
+                    href="/solicitacoes-orgao"
+                    onClick={() => setAberto(false)}
+                    className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Solicitações de órgão
+                  </Link>
+                  <Link
+                    href="/orgaos-categorias"
+                    onClick={() => setAberto(false)}
+                    className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Categorias por órgão
+                  </Link>
+                </>
               )}
             </>
           )}

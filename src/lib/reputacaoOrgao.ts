@@ -12,9 +12,11 @@ export interface MetricasOrgao {
 }
 
 // Reclamacao não tem orgaoId direto - o vínculo é via RespostaOficial
-// (qualquer órgão ativo na cidade pode responder). "Respondida por este
-// órgão" = tem ao menos uma RespostaOficial dele; o índice de resolução
-// e o tempo de resposta são calculados só sobre esse conjunto.
+// (qualquer órgão ativo e habilitado pra categoria da reclamação pode
+// responder - ver orgaoAtendeCategoria em lib/orgaoCategoria.ts).
+// "Respondida por este órgão" = tem ao menos uma RespostaOficial dele; o
+// índice de resolução e o tempo de resposta são calculados só sobre
+// esse conjunto.
 export async function calcularMetricasOrgao(orgaoId: string): Promise<MetricasOrgao> {
   const primeirasRespostas = await prisma.respostaOficial.groupBy({
     by: ["reclamacaoId"],

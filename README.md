@@ -400,6 +400,12 @@ para banir usuário. O `seed.ts` continua criando um órgão de demonstração
 pronto (veja `SEED_ORGAO_EMAIL`/`SEED_ORGAO_SENHA`), útil para testar sem
 passar pelo fluxo de aprovação.
 
+Por padrão, um órgão vê e pode responder qualquer reclamação da sua
+cidade. Um **ADMIN** pode restringir isso em `/orgaos-categorias`,
+atribuindo categorias específicas a cada órgão (ex.: só "Buracos e
+pavimentação" para a Secretaria de Obras) — um órgão sem nenhuma
+categoria atribuída continua no comportamento padrão (atende tudo).
+
 ### Integridade de conta e antifake
 
 Como a plataforma lida com reclamações sobre a cidade — incluindo, indiretamente, sobre a gestão pública —, ela é um alvo natural de manipulação coordenada (contas falsas para inflar ou forjar corroboração comunitária). As medidas atuais são de integridade de conta/comportamento, não de moderação de conteúdo político:

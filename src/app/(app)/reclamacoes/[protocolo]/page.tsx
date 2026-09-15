@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/status-badge";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
+import { orgaoAtendeCategoria } from "@/lib/orgaoCategoria";
 
 import { alternarConfirmacao, avaliarReclamacao, criarDenuncia, responderReclamacao } from "./actions";
 import { criarComentario } from "./comentarios";
@@ -68,11 +69,15 @@ export default async function ReclamacaoPage({
 
   const orgaoDoUsuario =
     session?.user?.papel === "ORGAO" && session.user.orgaoId
-      ? await prisma.orgao.findUnique({ where: { id: session.user.orgaoId } })
+      ? await prisma.orgao.findUnique({
+          where: { id: session.user.orgaoId },
+          include: { categorias: { select: { id: true } } },
+        })
       : null;
   const podeResponder =
     !!orgaoDoUsuario?.ativo &&
     orgaoDoUsuario.cidadeId === reclamacao.cidadeId &&
+    orgaoAtendeCategoria(orgaoDoUsuario.categorias, reclamacao.categoriaId) &&
     (reclamacao.status === "PUBLICADA" || reclamacao.status === "EM_ANDAMENTO");
 
   const podeAvaliar =

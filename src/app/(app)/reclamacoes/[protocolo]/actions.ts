@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { criarNotificacao } from "@/lib/notificacoes";
+import { orgaoAtendeCategoria } from "@/lib/orgaoCategoria";
 import { precisaVerificarEmail } from "@/lib/verificacao";
 
 import { AvaliacaoSchema, DenunciaSchema, RespostaOficialSchema } from "./definitions";
@@ -188,7 +189,10 @@ export async function responderReclamacao(
   }
 
   const [orgao, reclamacao] = await Promise.all([
-    prisma.orgao.findUnique({ where: { id: session.user.orgaoId! } }),
+    prisma.orgao.findUnique({
+      where: { id: session.user.orgaoId! },
+      include: { categorias: { select: { id: true } } },
+    }),
     prisma.reclamacao.findUnique({ where: { id: reclamacaoId } }),
   ]);
 
@@ -196,6 +200,9 @@ export async function responderReclamacao(
     return;
   }
   if (orgao.cidadeId !== reclamacao.cidadeId) {
+    return;
+  }
+  if (!orgaoAtendeCategoria(orgao.categorias, reclamacao.categoriaId)) {
     return;
   }
   if (reclamacao.status !== "PUBLICADA" && reclamacao.status !== "EM_ANDAMENTO") {

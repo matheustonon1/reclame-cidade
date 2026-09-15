@@ -35,9 +35,14 @@ export default async function SolicitacoesOrgaoPage() {
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-        Solicitações de acesso como órgão
-      </h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          Solicitações de acesso como órgão
+        </h1>
+        <Link href="/orgaos-categorias" className="text-sm text-primary underline">
+          Categorias por órgão
+        </Link>
+      </div>
 
       {pendentes.length === 0 && (
         <p className="text-sm text-slate-500 dark:text-slate-400">
