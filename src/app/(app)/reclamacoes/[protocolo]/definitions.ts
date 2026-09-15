@@ -44,6 +44,14 @@ export const DenunciaSchema = z.object({
   }),
 });
 
+export const RecursoSchema = z.object({
+  texto: z
+    .string()
+    .trim()
+    .min(20, { error: "Explique com mais detalhes por que a rejeição deveria ser revista (mín. 20 caracteres)." })
+    .max(1000, { error: "Texto muito longo (máx. 1000 caracteres)." }),
+});
+
 export const ComentarioSchema = z.object({
   texto: z
     .string()

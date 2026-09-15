@@ -19,6 +19,7 @@ Além do fluxo básico de reclamação → moderação → resposta oficial, a p
 - **Tema claro/escuro** com preferência persistida por usuário
 - **Cadastro de órgão com aprovação**: prefeituras/secretarias solicitam acesso publicamente, um ADMIN aprova ou rejeita, e só então a conta é criada e um link de definição de senha é enviado
 - **Dashboard de estatísticas de moderação**: taxa de aprovação, score médio por eixo, volume por dia e concordância entre a IA e a revisão humana
+- **Recurso contra rejeição**: o autor pode contestar uma vez a rejeição de uma reclamação, encaminhando-a para revisão humana com o motivo original e o argumento do autor lado a lado
 
 O diferencial técnico é o **pipeline de moderação automatizada**: todo conteúdo submetido passa por uma sequência de verificações antes de ser publicado, combinando checagens determinísticas com análise por modelo de linguagem multimodal.
 

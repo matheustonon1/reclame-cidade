@@ -9,7 +9,7 @@ import { criarNotificacao } from "@/lib/notificacoes";
 import { orgaoAtendeCategoria } from "@/lib/orgaoCategoria";
 import { precisaVerificarEmail } from "@/lib/verificacao";
 
-import { AvaliacaoSchema, DenunciaSchema, RespostaOficialSchema } from "./definitions";
+import { AvaliacaoSchema, DenunciaSchema, RecursoSchema, RespostaOficialSchema } from "./definitions";
 import { exigirOrgao } from "./exigir-orgao";
 
 const LIMITE_DENUNCIAS_DIA = 10;
@@ -308,4 +308,50 @@ export async function avaliarReclamacao(
   });
 
   revalidatePath(`/reclamacoes/${protocolo}`);
+}
+
+// Único recurso permitido por reclamação rejeitada (emRecurso vira true
+// aqui e nunca volta a false) - reaproveita a mesma fila e as mesmas
+// ações (aprovarReclamacao/rejeitarReclamacao) que a IA já usa pra
+// encaminhar pra revisão humana, só que iniciada pelo autor em vez da
+// IA. motivoRejeicao original não é apagado, pra o moderador ver os
+// dois lados (por que foi rejeitada e por que o autor discorda).
+export async function contestarRejeicao(
+  reclamacaoId: string,
+  protocolo: string,
+  formData: FormData
+) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const validado = RecursoSchema.safeParse({
+    texto: formData.get("texto"),
+  });
+  if (!validado.success) {
+    return;
+  }
+
+  const reclamacao = await prisma.reclamacao.findUnique({
+    where: { id: reclamacaoId },
+  });
+  if (!reclamacao || reclamacao.autorId !== session.user.id) {
+    return;
+  }
+  if (reclamacao.status !== "REJEITADA" || reclamacao.emRecurso) {
+    return;
+  }
+
+  await prisma.reclamacao.update({
+    where: { id: reclamacaoId },
+    data: {
+      status: "AGUARDANDO_REVISAO",
+      emRecurso: true,
+      textoRecurso: validado.data.texto,
+    },
+  });
+
+  revalidatePath(`/reclamacoes/${protocolo}`);
+  revalidatePath("/moderacao");
 }

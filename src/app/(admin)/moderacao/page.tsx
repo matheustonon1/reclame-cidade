@@ -80,6 +80,24 @@ export default async function ModeracaoPage() {
             </p>
             <p className="text-slate-800 dark:text-slate-200">{reclamacao.descricao}</p>
 
+            {reclamacao.emRecurso && (
+              <div className="rounded-lg bg-blue-50 p-3 text-sm dark:bg-blue-950/40">
+                <p className="font-medium text-blue-800 dark:text-blue-300">
+                  Recurso do cidadão contra rejeição
+                </p>
+                {reclamacao.motivoRejeicao && (
+                  <p className="text-blue-900 dark:text-blue-200">
+                    Motivo original da rejeição: {reclamacao.motivoRejeicao}
+                  </p>
+                )}
+                {reclamacao.textoRecurso && (
+                  <p className="mt-1 italic text-blue-900 dark:text-blue-200">
+                    Argumento do autor: “{reclamacao.textoRecurso}”
+                  </p>
+                )}
+              </div>
+            )}
+
             {reclamacao.midias.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {reclamacao.midias.map((midia) => (

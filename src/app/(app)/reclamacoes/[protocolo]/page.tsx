@@ -7,7 +7,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 import { orgaoAtendeCategoria } from "@/lib/orgaoCategoria";
 
-import { alternarConfirmacao, avaliarReclamacao, criarDenuncia, responderReclamacao } from "./actions";
+import {
+  alternarConfirmacao,
+  avaliarReclamacao,
+  contestarRejeicao,
+  criarDenuncia,
+  responderReclamacao,
+} from "./actions";
 import { criarComentario } from "./comentarios";
 import { construirLinhaDoTempo } from "./linha-do-tempo";
 
@@ -150,10 +156,39 @@ export default async function ReclamacaoPage({
             Motivo da rejeição: {reclamacao.motivoRejeicao}
           </p>
         )}
+        {reclamacao.status === "REJEITADA" && ehAutor && !reclamacao.emRecurso && (
+          <form
+            action={contestarRejeicao.bind(null, reclamacao.id, protocolo)}
+            className="flex flex-col gap-2"
+          >
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Se você acha que essa rejeição foi um engano, pode contestar
+              uma vez — um moderador humano vai revisar.
+            </p>
+            <textarea
+              name="texto"
+              required
+              minLength={20}
+              placeholder="Explique por que essa decisão deveria ser revista"
+              rows={3}
+              className={campoInput}
+            />
+            <button type="submit" className={`${botaoSecundario} w-fit`}>
+              Contestar rejeição
+            </button>
+          </form>
+        )}
+        {reclamacao.status === "REJEITADA" && ehAutor && reclamacao.emRecurso && (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Você já contestou esta decisão e um moderador manteve a
+            rejeição.
+          </p>
+        )}
         {reclamacao.status === "AGUARDANDO_REVISAO" && (
           <p className="text-sm text-amber-600 dark:text-amber-400">
-            Esta reclamação foi encaminhada para revisão humana antes da
-            publicação.
+            {reclamacao.emRecurso
+              ? "Seu recurso contra a rejeição está em análise por um moderador."
+              : "Esta reclamação foi encaminhada para revisão humana antes da publicação."}
           </p>
         )}
         {erro === "email-nao-verificado" && (

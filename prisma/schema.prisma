@@ -367,7 +367,12 @@ model Reclamacao {
   status         StatusReclamacao @default(EM_MODERACAO)
   scoreModeracao Float?
   motivoRejeicao String?          @db.Text
+  // emRecurso vira true no primeiro (e único) recurso do autor contra
+  // uma rejeição - permite um só, pra não virar loop de novas tentativas
+  // sobre o mesmo conteúdo. textoRecurso é o argumento do cidadão,
+  // mostrado ao lado do motivoRejeicao original na fila de moderação.
   emRecurso      Boolean          @default(false)
+  textoRecurso   String?          @db.Text
 
   visualizacoes Int @default(0)
 
