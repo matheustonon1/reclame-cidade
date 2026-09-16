@@ -154,3 +154,49 @@ export async function enviarEmailSolicitacaoRejeitada({
     html: montarHtmlSolicitacaoRejeitada(motivo),
   });
 }
+
+function montarHtmlNotificacao(titulo: string, mensagem: string, url?: string) {
+  return `
+    <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h1 style="color: #1d4ed8; font-size: 20px;">Reclame Cidade</h1>
+      <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin-bottom: 4px;">${titulo}</p>
+      <p style="color: #334155; font-size: 14px; line-height: 1.5;">${mensagem}</p>
+      ${
+        url
+          ? `<a
+              href="${url}"
+              style="display: inline-block; background: #1d4ed8; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; margin: 8px 0;"
+            >
+              Ver reclamação
+            </a>`
+          : ""
+      }
+      <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+        Você recebeu este e-mail porque tem uma conta no Reclame Cidade.
+      </p>
+    </div>
+  `;
+}
+
+// Notificação genérica por e-mail (reclamação publicada/rejeitada,
+// resposta oficial, mudança de status, pedido de avaliação) - reusa o
+// mesmo template pros diferentes tipos em vez de um HTML por evento.
+// Chamada por criarNotificacao(), nunca diretamente pelas actions.
+export async function enviarEmailNotificacao({
+  email,
+  titulo,
+  mensagem,
+  protocolo,
+}: {
+  email: string;
+  titulo: string;
+  mensagem: string;
+  protocolo?: string;
+}) {
+  const url = protocolo ? montarUrl(`/reclamacoes/${protocolo}`) : undefined;
+  await enviarEmail({
+    to: email,
+    subject: `${titulo} — Reclame Cidade`,
+    html: montarHtmlNotificacao(titulo, mensagem, url),
+  });
+}

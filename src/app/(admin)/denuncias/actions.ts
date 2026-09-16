@@ -68,6 +68,7 @@ export async function marcarProcedente(denunciaId: string) {
     titulo: "Reclamação arquivada",
     mensagem: `Sua reclamação "${reclamacao.titulo}" foi arquivada após denúncia procedente.`,
     reclamacaoId: reclamacao.id,
+    protocolo: reclamacao.protocolo,
   });
 
   revalidatePath("/denuncias");

@@ -70,6 +70,7 @@ export async function aprovarReclamacao(reclamacaoId: string) {
     titulo: "Reclamação publicada",
     mensagem: `Sua reclamação "${reclamacao.titulo}" foi publicada.`,
     reclamacaoId: reclamacao.id,
+    protocolo: reclamacao.protocolo,
   });
 
   revalidatePath("/moderacao");
@@ -125,6 +126,7 @@ export async function rejeitarReclamacao(
     titulo: "Reclamação rejeitada",
     mensagem: `Sua reclamação "${reclamacao.titulo}" foi rejeitada: ${validado.data.motivo}`,
     reclamacaoId: reclamacao.id,
+    protocolo: reclamacao.protocolo,
   });
 
   revalidatePath("/moderacao");

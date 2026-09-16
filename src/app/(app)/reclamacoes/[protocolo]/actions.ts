@@ -245,6 +245,7 @@ export async function responderReclamacao(
     titulo: `${orgao.nome} respondeu sua reclamação`,
     mensagem: validado.data.texto,
     reclamacaoId: reclamacao.id,
+    protocolo,
   });
 
   if (validado.data.novoStatus === "RESOLVIDA") {
@@ -254,6 +255,7 @@ export async function responderReclamacao(
       titulo: "O problema foi resolvido?",
       mensagem: `${orgao.nome} marcou "${reclamacao.titulo}" como resolvida. Avalie se o problema foi realmente resolvido.`,
       reclamacaoId: reclamacao.id,
+      protocolo,
     });
   }
 

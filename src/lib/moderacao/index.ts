@@ -308,6 +308,7 @@ export async function moderarReclamacao(
       titulo: "Reclamação publicada",
       mensagem: `Sua reclamação "${reclamacao.titulo}" foi publicada.`,
       reclamacaoId: reclamacao.id,
+      protocolo: reclamacao.protocolo,
     });
   } else if (publicacaoAdiada) {
     await prisma.reclamacao.update({
@@ -329,6 +330,7 @@ export async function moderarReclamacao(
       titulo: "Reclamação rejeitada",
       mensagem: `Sua reclamação "${reclamacao.titulo}" foi rejeitada: ${analise.justificativa}`,
       reclamacaoId: reclamacao.id,
+      protocolo: reclamacao.protocolo,
     });
   } else {
     await prisma.reclamacao.update({
@@ -384,5 +386,6 @@ export async function finalizarPublicacaoAprovada(reclamacaoId: string) {
     titulo: "Reclamação publicada",
     mensagem: `Sua reclamação "${reclamacao.titulo}" foi publicada.`,
     reclamacaoId,
+    protocolo: reclamacao.protocolo,
   });
 }
