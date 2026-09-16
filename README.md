@@ -203,7 +203,8 @@ npm run dev      # ambiente de desenvolvimento
 npm run build    # build de produção
 npm run start    # executa o build
 npm run lint     # verificação de código
-npm test         # roda os testes automatizados (Vitest)
+npm test         # testes unitários (Vitest)
+npm run test:e2e # testes end-to-end (Playwright) - ver seção abaixo
 ```
 
 ### Banco de dados
@@ -222,6 +223,36 @@ npx prisma studio                    # interface visual do banco (localhost:5555
 npx prisma migrate dev --name nome   # cria e aplica uma migration
 npx prisma generate                  # regenera o client após alterar o schema
 ```
+
+### Testes end-to-end (Playwright)
+
+Os testes em `e2e/` exercitam fluxos completos pelo navegador contra um
+servidor real (não usam mocks) - cadastro/login, bloqueio por força
+bruta, ciclo completo do 2FA, órgão restrito por categoria, recurso
+contra rejeição e o onboarding de órgão de ponta a ponta. Cada teste
+cria seus próprios dados (usuários com e-mail prefixado `e2e-teste-*`,
+reclamações com protocolo prefixado) e limpa tudo ao final, então é
+seguro rodar contra o banco de desenvolvimento normal.
+
+Pré-requisitos (o Playwright não sobe nada disso sozinho):
+
+```bash
+docker compose up -d   # banco de dados
+npm run dev            # servidor em http://localhost:3000
+```
+
+Depois, em outro terminal:
+
+```bash
+npm run test:e2e                        # roda toda a suíte
+npx playwright test e2e/totp.spec.ts    # roda só um arquivo
+npx playwright show-report              # abre o relatório da última execução
+```
+
+Rodam com 1 worker (`playwright.config.ts`) de propósito: os testes
+escrevem no mesmo banco compartilhado, então paralelismo entre arquivos
+causaria corrida (ex.: dois testes usando a fila de `/moderacao` ao
+mesmo tempo).
 
 ### Recomeçar o banco do zero
 
