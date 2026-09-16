@@ -168,8 +168,18 @@ export async function limparDadosTeste() {
       await prisma.respostaOficial.deleteMany({ where: { autorId: { in: userIds } } });
     }
 
+    // Por autorId, não só pelo prefixo no protocolo - uma reclamação criada
+    // pelo fluxo real (ex.: teste de upload passando pela UI) tem protocolo
+    // gerado por gerarProtocolo(), sem o prefixo de teste. Sem isso, o
+    // deleteMany de User abaixo falha por FK (autorId) e a função inteira
+    // aborta no catch, deixando usuário e reclamação órfãos no banco.
     await prisma.reclamacao.deleteMany({
-      where: { protocolo: { contains: PREFIXO_TESTE } },
+      where: {
+        OR: [
+          { protocolo: { contains: PREFIXO_TESTE } },
+          ...(userIds.length > 0 ? [{ autorId: { in: userIds } }] : []),
+        ],
+      },
     });
 
     if (userIds.length > 0) {
