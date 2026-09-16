@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Reclame Cidade",
+  title: "Urban Grid",
   description:
     "Plataforma de reclamações urbanas por município, com moderação de conteúdo assistida por IA.",
 };
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         {children}
         <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
-          Reclame Cidade — Trabalho de Conclusão de Curso
+          Urban Grid — Trabalho de Conclusão de Curso
         </footer>
       </body>
     </html>

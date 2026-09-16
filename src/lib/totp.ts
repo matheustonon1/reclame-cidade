@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 
 import { prisma } from "@/lib/prisma";
 
-const NOME_EMISSOR = "Reclame Cidade";
+const NOME_EMISSOR = "Urban Grid";
 const QUANTIDADE_CODIGOS_BACKUP = 8;
 const LIMITE_TENTATIVAS = 5;
 const BLOQUEIO_MS = 5 * 60 * 1000;

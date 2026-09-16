@@ -91,7 +91,7 @@ Além do texto, ${quantidadeImagens} imagem(ns) foram anexadas, nesta ordem (ín
       : `
 Nenhuma imagem foi anexada — retorne scoreImagemImpropria: 0, coerenciaTextoImagem: 1 e regioesSensiveis: [].`;
 
-  return `Você é o sistema de moderação de conteúdo do Reclame Cidade, uma plataforma de reclamações urbanas por município.
+  return `Você é o sistema de moderação de conteúdo do Urban Grid, uma plataforma de reclamações urbanas por município.
 
 Analise o título, a descrição e (se houver) as imagens de uma reclamação e avalie, em uma escala de 0 a 1, o quanto o conteúdo apresenta cada um destes problemas:
 

@@ -167,7 +167,7 @@ export default async function Home() {
           </span>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-slate-100">
-            Reclame <span className="text-primary">Cidade</span>
+            Urban <span className="text-primary">Grid</span>
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400">
             Registre problemas urbanos do seu município, acompanhe a resposta
@@ -293,7 +293,7 @@ export default async function Home() {
       <section className="flex w-full flex-col items-center gap-8 border-t border-slate-200 px-6 py-16 sm:px-8 dark:border-slate-800">
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Por que o Reclame Cidade é diferente
+            Por que o Urban Grid é diferente
           </h2>
           <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
             Um canal direto entre cidadão e órgão público, com transparência

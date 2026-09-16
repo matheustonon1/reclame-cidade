@@ -33,7 +33,7 @@ const ResultadoAnaliseSchema = z.object({
 type ResultadoAnalise = z.infer<typeof ResultadoAnaliseSchema>;
 
 function montarPrompt(texto: string) {
-  return `Você é o sistema de moderação de comentários do Reclame Cidade, uma plataforma de reclamações urbanas por município.
+  return `Você é o sistema de moderação de comentários do Urban Grid, uma plataforma de reclamações urbanas por município.
 
 Analise o comentário abaixo e avalie, de 0 a 1, o quanto ele apresenta:
 - scoreOfensivo: linguagem ofensiva, discurso de ódio ou ataque pessoal.

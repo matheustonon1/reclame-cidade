@@ -49,3 +49,7 @@ next-env.d.ts
 
 # claude code - permissões e config local da ferramenta, não é código do projeto
 .claude/
+
+# starter baixado do TiDB Cloud pra pegar a string de conexão - não é
+# parte do projeto, tem seu próprio repositório git
+/tidb-nodejs-prisma-quickstart/

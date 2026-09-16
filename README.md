@@ -1,6 +1,6 @@
-# Reclame Cidade
+# Urban Grid
 
-> Nome provisório. Plataforma web de reclamações urbanas por município, inspirada no modelo do Reclame Aqui, com moderação de conteúdo assistida por Inteligência Artificial.
+> Plataforma web de reclamações urbanas por município, com moderação de conteúdo assistida por Inteligência Artificial.
 
 Trabalho de Conclusão de Curso.
 
@@ -89,8 +89,8 @@ git --version
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/SEU_USUARIO/reclame-cidade.git
-cd reclame-cidade
+git clone https://github.com/SEU_USUARIO/urban-grid.git
+cd urban-grid
 ```
 
 ### 2. Instalar as dependências
@@ -270,7 +270,7 @@ npx prisma db seed
 ## Estrutura de pastas
 
 ```
-reclame-cidade/
+urban-grid/
 ├── prisma/
 │   ├── schema.prisma        # modelo de dados
 │   ├── migrations/          # histórico versionado do banco

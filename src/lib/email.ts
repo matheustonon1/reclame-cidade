@@ -40,7 +40,7 @@ async function enviarEmail({ to, subject, html }: { to: string; subject: string;
   try {
     const resend = new Resend(apiKey);
     const { error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? "Reclame Cidade <onboarding@resend.dev>",
+      from: process.env.RESEND_FROM_EMAIL ?? "Urban Grid <onboarding@resend.dev>",
       to,
       subject,
       html,
@@ -57,7 +57,7 @@ async function enviarEmail({ to, subject, html }: { to: string; subject: string;
 function montarHtmlVerificacao(url: string) {
   return `
     <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h1 style="color: #1d4ed8; font-size: 20px;">Reclame Cidade</h1>
+      <h1 style="color: #1d4ed8; font-size: 20px;">Urban Grid</h1>
       <p style="color: #334155; font-size: 14px; line-height: 1.5;">
         Confirme seu e-mail para ativar sua conta e poder confirmar ou denunciar reclamações.
       </p>
@@ -68,7 +68,7 @@ function montarHtmlVerificacao(url: string) {
         Verificar e-mail
       </a>
       <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
-        Se você não criou uma conta no Reclame Cidade, ignore este e-mail.
+        Se você não criou uma conta no Urban Grid, ignore este e-mail.
       </p>
     </div>
   `;
@@ -84,7 +84,7 @@ export async function enviarEmailVerificacao({
   const url = montarUrl(`/verificar-email/${token}`);
   await enviarEmail({
     to: email,
-    subject: "Confirme seu e-mail — Reclame Cidade",
+    subject: "Confirme seu e-mail — Urban Grid",
     html: montarHtmlVerificacao(url),
   });
 }
@@ -92,7 +92,7 @@ export async function enviarEmailVerificacao({
 function montarHtmlAcessoOrgao(url: string, nomeOrgao: string) {
   return `
     <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h1 style="color: #1d4ed8; font-size: 20px;">Reclame Cidade</h1>
+      <h1 style="color: #1d4ed8; font-size: 20px;">Urban Grid</h1>
       <p style="color: #334155; font-size: 14px; line-height: 1.5;">
         Sua solicitação de acesso como <strong>${nomeOrgao}</strong> foi aprovada.
         Defina sua senha para começar a responder oficialmente às reclamações da sua cidade.
@@ -122,7 +122,7 @@ export async function enviarEmailAcessoOrgao({
   const url = montarUrl(`/orgao/definir-senha/${token}`);
   await enviarEmail({
     to: email,
-    subject: "Acesso de órgão aprovado — Reclame Cidade",
+    subject: "Acesso de órgão aprovado — Urban Grid",
     html: montarHtmlAcessoOrgao(url, nomeOrgao),
   });
 }
@@ -130,7 +130,7 @@ export async function enviarEmailAcessoOrgao({
 function montarHtmlSolicitacaoRejeitada(motivo: string) {
   return `
     <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h1 style="color: #1d4ed8; font-size: 20px;">Reclame Cidade</h1>
+      <h1 style="color: #1d4ed8; font-size: 20px;">Urban Grid</h1>
       <p style="color: #334155; font-size: 14px; line-height: 1.5;">
         Sua solicitação de acesso como órgão não foi aprovada.
       </p>
@@ -150,7 +150,7 @@ export async function enviarEmailSolicitacaoRejeitada({
 }) {
   await enviarEmail({
     to: email,
-    subject: "Solicitação de acesso como órgão — Reclame Cidade",
+    subject: "Solicitação de acesso como órgão — Urban Grid",
     html: montarHtmlSolicitacaoRejeitada(motivo),
   });
 }
@@ -158,7 +158,7 @@ export async function enviarEmailSolicitacaoRejeitada({
 function montarHtmlNotificacao(titulo: string, mensagem: string, url?: string) {
   return `
     <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h1 style="color: #1d4ed8; font-size: 20px;">Reclame Cidade</h1>
+      <h1 style="color: #1d4ed8; font-size: 20px;">Urban Grid</h1>
       <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin-bottom: 4px;">${titulo}</p>
       <p style="color: #334155; font-size: 14px; line-height: 1.5;">${mensagem}</p>
       ${
@@ -172,7 +172,7 @@ function montarHtmlNotificacao(titulo: string, mensagem: string, url?: string) {
           : ""
       }
       <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
-        Você recebeu este e-mail porque tem uma conta no Reclame Cidade.
+        Você recebeu este e-mail porque tem uma conta no Urban Grid.
       </p>
     </div>
   `;
@@ -196,7 +196,7 @@ export async function enviarEmailNotificacao({
   const url = protocolo ? montarUrl(`/reclamacoes/${protocolo}`) : undefined;
   await enviarEmail({
     to: email,
-    subject: `${titulo} — Reclame Cidade`,
+    subject: `${titulo} — Urban Grid`,
     html: montarHtmlNotificacao(titulo, mensagem, url),
   });
 }

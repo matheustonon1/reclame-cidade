@@ -17,7 +17,7 @@ export function TermosConteudo() {
           1. Termos de Uso
         </h2>
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          Ao criar uma conta no Reclame Cidade, você concorda em fornecer
+          Ao criar uma conta no Urban Grid, você concorda em fornecer
           informações verdadeiras, não publicar conteúdo ofensivo, difamatório,
           fraudulento ou fora do escopo de problemas urbanos do seu município,
           e assumir responsabilidade pelo conteúdo que publicar. O uso da

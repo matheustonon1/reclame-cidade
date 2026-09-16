@@ -124,7 +124,7 @@ export async function excluirConta(
       where: { id: usuario.id },
       data: {
         name: "Usuário removido",
-        email: `removido-${usuario.id}@reclamecidade.local`,
+        email: `removido-${usuario.id}@urbangrid.local`,
         senhaHash: null,
         cpfHash: null,
         telefone: null,

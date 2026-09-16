@@ -42,7 +42,7 @@ export async function SiteHeader() {
     <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-3 sm:px-8">
         <Link href="/" className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          Reclame <span className="text-primary">Cidade</span>
+          Urban <span className="text-primary">Grid</span>
         </Link>
 
         <BuscaCidadeHeader />

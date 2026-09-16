@@ -27,7 +27,7 @@ describe("gerarUriTotp", () => {
     const uri = gerarUriTotp("usuario@example.com", "SEGREDO123");
     expect(uri).toMatch(/^otpauth:\/\/totp\//);
     expect(uri).toContain(encodeURIComponent("usuario@example.com"));
-    expect(uri).toContain("Reclame%20Cidade");
+    expect(uri).toContain("Urban%20Grid");
   });
 });
 

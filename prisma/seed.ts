@@ -128,7 +128,7 @@ async function seedCategorias() {
 }
 
 async function seedAdmin() {
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@reclamecidade.local";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@urbangrid.local";
   const senha = process.env.SEED_ADMIN_SENHA ?? "admin123";
   const senhaHash = await bcrypt.hash(senha, 10);
 
@@ -167,7 +167,7 @@ async function seedOrgaoDemo() {
     create: { nome: NOME_ORGAO, sigla: "SSU", cidadeId: cidade.id },
   });
 
-  const email = process.env.SEED_ORGAO_EMAIL ?? "orgao@reclamecidade.local";
+  const email = process.env.SEED_ORGAO_EMAIL ?? "orgao@urbangrid.local";
   const senha = process.env.SEED_ORGAO_SENHA ?? "orgao123";
   const senhaHash = await bcrypt.hash(senha, 10);
 
