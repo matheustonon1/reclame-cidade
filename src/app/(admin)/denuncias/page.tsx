@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, botaoSecundario, cartao, containerPagina } from "@/lib/estilos";
 
 import { exigirModerador } from "../moderacao/exigir-moderador";
@@ -17,16 +19,26 @@ const MOTIVO_LABEL: Record<string, string> = {
   OUTRO: "Outro",
 };
 
-export default async function DenunciasPage() {
+export default async function DenunciasPage({ searchParams }: PageProps<"/denuncias">) {
   await exigirModerador();
   const session = await auth();
   const ehAdmin = session?.user?.papel === "ADMIN";
 
-  const denuncias = await prisma.denuncia.findMany({
-    where: { status: "ABERTA" },
-    orderBy: { createdAt: "asc" },
-    include: { denunciante: true },
-  });
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { status: "ABERTA" as const };
+
+  const [denuncias, totalDenuncias] = await Promise.all([
+    prisma.denuncia.findMany({
+      where: filtro,
+      orderBy: { createdAt: "asc" },
+      include: { denunciante: true },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
+    }),
+    prisma.denuncia.count({ where: filtro }),
+  ]);
+  const totalPaginas = calcularTotalPaginas(totalDenuncias);
 
   const reclamacoes = denuncias.length
     ? await prisma.reclamacao.findMany({
@@ -121,6 +133,8 @@ export default async function DenunciasPage() {
           </div>
         );
       })}
+
+      <Paginacao paginaAtual={paginaAtual} totalPaginas={totalPaginas} basePath="/denuncias" />
     </main>
   );
 }

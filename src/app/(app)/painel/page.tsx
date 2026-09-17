@@ -4,27 +4,37 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/status-badge";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, botaoSecundario, cartao, containerPagina } from "@/lib/estilos";
 
 import { reenviarVerificacao } from "./actions";
 
-export default async function PainelPage() {
+export default async function PainelPage({ searchParams }: PageProps<"/painel">) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  const [reclamacoes, usuario] = await Promise.all([
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { autorId: session.user.id };
+
+  const [reclamacoes, totalReclamacoes, usuario] = await Promise.all([
     prisma.reclamacao.findMany({
-      where: { autorId: session.user.id },
+      where: filtro,
       orderBy: { createdAt: "desc" },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
     }),
+    prisma.reclamacao.count({ where: filtro }),
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { emailVerified: true },
     }),
   ]);
+  const totalPaginas = calcularTotalPaginas(totalReclamacoes);
 
   return (
     <main className={containerPagina}>
@@ -74,6 +84,8 @@ export default async function PainelPage() {
             <StatusBadge status={reclamacao.status} />
           </Link>
         ))}
+
+        <Paginacao paginaAtual={paginaAtual} totalPaginas={totalPaginas} basePath="/painel" />
       </div>
     </main>
   );

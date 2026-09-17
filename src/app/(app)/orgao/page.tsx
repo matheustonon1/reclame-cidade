@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { StatusReclamacao } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/status-badge";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 import { calcularMetricasOrgao, classificarIndice } from "@/lib/reputacaoOrgao";
 
 import { responderReclamacao } from "../reclamacoes/[protocolo]/actions";
 import { exigirOrgao } from "../reclamacoes/[protocolo]/exigir-orgao";
-
-const LIMITE_HISTORICO = 15;
 
 function Metrica({ label, valor }: { label: string; valor: string }) {
   return (
@@ -19,8 +20,12 @@ function Metrica({ label, valor }: { label: string; valor: string }) {
   );
 }
 
-export default async function PainelOrgaoPage() {
+export default async function PainelOrgaoPage({ searchParams }: PageProps<"/orgao">) {
   const session = await exigirOrgao();
+
+  const { pagePendentes, pageHistorico } = await searchParams;
+  const paginaPendentes = lerPaginaAtual(pagePendentes);
+  const paginaHistorico = lerPaginaAtual(pageHistorico);
 
   const orgao = await prisma.orgao.findUnique({
     where: { id: session.user.orgaoId! },
@@ -32,18 +37,27 @@ export default async function PainelOrgaoPage() {
   const categoriaIds =
     orgao && orgao.categorias.length > 0 ? orgao.categorias.map((c) => c.id) : null;
 
-  const [pendentes, metricas, historico] = await Promise.all([
-    orgao
+  const filtroPendentes = orgao
+    ? {
+        cidadeId: orgao.cidadeId,
+        status: {
+          in: [StatusReclamacao.PUBLICADA, StatusReclamacao.EM_ANDAMENTO],
+        },
+        ...(categoriaIds ? { categoriaId: { in: categoriaIds } } : {}),
+      }
+    : null;
+
+  const [pendentes, totalPendentes, metricas, historico, totalHistorico] = await Promise.all([
+    filtroPendentes
       ? prisma.reclamacao.findMany({
-          where: {
-            cidadeId: orgao.cidadeId,
-            status: { in: ["PUBLICADA", "EM_ANDAMENTO"] },
-            ...(categoriaIds ? { categoriaId: { in: categoriaIds } } : {}),
-          },
+          where: filtroPendentes,
           orderBy: { publicadaEm: "asc" },
           include: { categoria: true },
+          skip: calcularSkip(paginaPendentes),
+          take: ITENS_POR_PAGINA,
         })
       : Promise.resolve([]),
+    filtroPendentes ? prisma.reclamacao.count({ where: filtroPendentes }) : Promise.resolve(0),
     orgao
       ? calcularMetricasOrgao(orgao.id)
       : Promise.resolve(null),
@@ -52,7 +66,8 @@ export default async function PainelOrgaoPage() {
           where: { orgaoId: orgao.id },
           orderBy: { createdAt: "desc" },
           distinct: ["reclamacaoId"],
-          take: LIMITE_HISTORICO,
+          skip: calcularSkip(paginaHistorico),
+          take: ITENS_POR_PAGINA,
           include: {
             reclamacao: {
               select: {
@@ -65,7 +80,14 @@ export default async function PainelOrgaoPage() {
           },
         })
       : Promise.resolve([]),
+    orgao
+      ? prisma.respostaOficial
+          .findMany({ where: { orgaoId: orgao.id }, distinct: ["reclamacaoId"], select: { id: true } })
+          .then((linhas) => linhas.length)
+      : Promise.resolve(0),
   ]);
+  const totalPaginasPendentes = calcularTotalPaginas(totalPendentes);
+  const totalPaginasHistorico = calcularTotalPaginas(totalHistorico);
 
   const classificacao = metricas
     ? classificarIndice(metricas.indiceResolucao, metricas.totalRespondidas)
@@ -128,7 +150,7 @@ export default async function PainelOrgaoPage() {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Pendentes de resposta
+          Pendentes de resposta {totalPendentes > 0 && `(${totalPendentes})`}
         </h2>
 
         {pendentes.length === 0 && (
@@ -169,11 +191,21 @@ export default async function PainelOrgaoPage() {
             </form>
           </div>
         ))}
+
+        <Paginacao
+          paginaAtual={paginaPendentes}
+          totalPaginas={totalPaginasPendentes}
+          basePath="/orgao"
+          paramName="pagePendentes"
+          searchParams={{
+            pageHistorico: typeof pageHistorico === "string" ? pageHistorico : undefined,
+          }}
+        />
       </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Histórico de respostas
+          Histórico de respostas {totalHistorico > 0 && `(${totalHistorico})`}
         </h2>
 
         {historico.length === 0 && (
@@ -220,6 +252,16 @@ export default async function PainelOrgaoPage() {
             </div>
           </Link>
         ))}
+
+        <Paginacao
+          paginaAtual={paginaHistorico}
+          totalPaginas={totalPaginasHistorico}
+          basePath="/orgao"
+          paramName="pageHistorico"
+          searchParams={{
+            pagePendentes: typeof pagePendentes === "string" ? pagePendentes : undefined,
+          }}
+        />
       </div>
     </main>
   );

@@ -166,6 +166,14 @@ export async function limparDadosTeste() {
       await prisma.totpBackupCode.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.notificacao.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.respostaOficial.deleteMany({ where: { autorId: { in: userIds } } });
+      // Denuncia.denunciante/analisadoPor não tem onDelete: Cascade - sem
+      // isso, o deleteMany de User abaixo falha por FK sempre que um teste
+      // passa pelo fluxo real de denúncia (e o catch aborta a limpeza toda).
+      await prisma.denuncia.deleteMany({
+        where: {
+          OR: [{ denuncianteId: { in: userIds } }, { analisadoPorId: { in: userIds } }],
+        },
+      });
     }
 
     // Por autorId, não só pelo prefixo no protocolo - uma reclamação criada

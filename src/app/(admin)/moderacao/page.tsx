@@ -1,24 +1,36 @@
 import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
 import { aprovarReclamacao, rejeitarReclamacao } from "./actions";
 import { exigirModerador } from "./exigir-moderador";
 
-export default async function ModeracaoPage() {
+export default async function ModeracaoPage({ searchParams }: PageProps<"/moderacao">) {
   await exigirModerador();
 
-  const pendentes = await prisma.reclamacao.findMany({
-    where: { status: "AGUARDANDO_REVISAO" },
-    orderBy: { updatedAt: "asc" },
-    include: {
-      categoria: true,
-      cidade: { include: { estado: true } },
-      autor: true,
-      midias: { orderBy: { ordem: "asc" } },
-    },
-  });
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { status: "AGUARDANDO_REVISAO" as const };
+
+  const [pendentes, totalPendentes] = await Promise.all([
+    prisma.reclamacao.findMany({
+      where: filtro,
+      orderBy: { updatedAt: "asc" },
+      include: {
+        categoria: true,
+        cidade: { include: { estado: true } },
+        autor: true,
+        midias: { orderBy: { ordem: "asc" } },
+      },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
+    }),
+    prisma.reclamacao.count({ where: filtro }),
+  ]);
+  const totalPaginas = calcularTotalPaginas(totalPendentes);
 
   const logs = pendentes.length
     ? await prisma.logModeracao.findMany({
@@ -184,6 +196,8 @@ export default async function ModeracaoPage() {
           </div>
         );
       })}
+
+      <Paginacao paginaAtual={paginaAtual} totalPaginas={totalPaginas} basePath="/moderacao" />
     </main>
   );
 }

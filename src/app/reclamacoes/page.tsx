@@ -4,31 +4,36 @@ import { prisma } from "@/lib/prisma";
 import { SeletorCidade } from "@/components/cidade-combobox";
 import { StatusBadge } from "@/components/status-badge";
 import { CategoriaIcon } from "@/components/categoria-icon";
+import { Paginacao } from "@/components/paginacao";
 import { formatarTempoRelativo } from "@/lib/tempo-relativo";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
 export default async function ReclamacoesPublicasPage({
   searchParams,
 }: PageProps<"/reclamacoes">) {
-  const { cidadeId, q } = await searchParams;
+  const { cidadeId, q, page } = await searchParams;
   const cidadeIdFiltro =
     typeof cidadeId === "string" && cidadeId ? cidadeId : undefined;
   const buscaFiltro = typeof q === "string" && q.trim() ? q.trim() : undefined;
+  const paginaAtual = lerPaginaAtual(page);
 
-  const [reclamacoes, cidadeFiltro] = await Promise.all([
+  const filtro = {
+    status: "PUBLICADA" as const,
+    ...(cidadeIdFiltro ? { cidadeId: cidadeIdFiltro } : {}),
+    ...(buscaFiltro
+      ? {
+          OR: [
+            { titulo: { contains: buscaFiltro } },
+            { descricao: { contains: buscaFiltro } },
+          ],
+        }
+      : {}),
+  };
+
+  const [reclamacoes, totalReclamacoes, cidadeFiltro] = await Promise.all([
     prisma.reclamacao.findMany({
-      where: {
-        status: "PUBLICADA",
-        ...(cidadeIdFiltro ? { cidadeId: cidadeIdFiltro } : {}),
-        ...(buscaFiltro
-          ? {
-              OR: [
-                { titulo: { contains: buscaFiltro } },
-                { descricao: { contains: buscaFiltro } },
-              ],
-            }
-          : {}),
-      },
+      where: filtro,
       orderBy: { publicadaEm: "desc" },
       include: {
         categoria: true,
@@ -36,8 +41,10 @@ export default async function ReclamacoesPublicasPage({
         _count: { select: { confirmacoes: true } },
         midias: { orderBy: { ordem: "asc" }, take: 1 },
       },
-      take: 50,
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
     }),
+    prisma.reclamacao.count({ where: filtro }),
     cidadeIdFiltro
       ? prisma.cidade.findUnique({
           where: { id: cidadeIdFiltro },
@@ -45,6 +52,7 @@ export default async function ReclamacoesPublicasPage({
         })
       : null,
   ]);
+  const totalPaginas = calcularTotalPaginas(totalReclamacoes);
 
   return (
     <main className={containerPagina}>
@@ -146,6 +154,13 @@ export default async function ReclamacoesPublicasPage({
           </div>
         </Link>
       ))}
+
+      <Paginacao
+        paginaAtual={paginaAtual}
+        totalPaginas={totalPaginas}
+        basePath="/reclamacoes"
+        searchParams={{ cidadeId: cidadeIdFiltro, q: buscaFiltro }}
+      />
     </main>
   );
 }
