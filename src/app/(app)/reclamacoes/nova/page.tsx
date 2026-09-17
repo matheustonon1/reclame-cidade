@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { containerPagina } from "@/lib/estilos";
 
 import { NovaReclamacaoForm } from "./form";
 
@@ -11,18 +12,17 @@ export default async function NovaReclamacaoPage() {
     redirect("/login");
   }
 
-  const [estados, categorias] = await Promise.all([
-    prisma.estado.findMany({ orderBy: { nome: "asc" } }),
-    prisma.categoria.findMany({
-      where: { ativa: true },
-      orderBy: { ordem: "asc" },
-    }),
-  ]);
+  const categorias = await prisma.categoria.findMany({
+    where: { ativa: true },
+    orderBy: { ordem: "asc" },
+  });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-8">
-      <h1 className="text-2xl font-bold">Nova reclamação</h1>
-      <NovaReclamacaoForm estados={estados} categorias={categorias} />
+    <main className={`${containerPagina} max-w-xl`}>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        Nova reclamação
+      </h1>
+      <NovaReclamacaoForm categorias={categorias} />
     </main>
   );
 }

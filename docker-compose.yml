@@ -13,3 +13,5 @@ services:
 
 volumes:
   mysql_data:
+    name: urban_grid_mysql_data
+    external: true

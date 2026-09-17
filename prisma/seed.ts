@@ -128,7 +128,7 @@ async function seedCategorias() {
 }
 
 async function seedAdmin() {
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@reclamecidade.local";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@urbangrid.local";
   const senha = process.env.SEED_ADMIN_SENHA ?? "admin123";
   const senhaHash = await bcrypt.hash(senha, 10);
 
@@ -147,10 +147,51 @@ async function seedAdmin() {
   console.log(`Admin: ${email} pronto.`);
 }
 
+async function seedOrgaoDemo() {
+  const CODIGO_IBGE_DEMO = "3550308"; // São Paulo - SP
+  const NOME_ORGAO = "Secretaria de Serviços Urbanos (demo)";
+
+  const cidade = await prisma.cidade.findUnique({
+    where: { codigoIbge: CODIGO_IBGE_DEMO },
+  });
+  if (!cidade) {
+    console.warn(
+      "seedOrgaoDemo: cidade de demonstração não encontrada — rode seedGeografia antes. Pulando."
+    );
+    return;
+  }
+
+  const orgao = await prisma.orgao.upsert({
+    where: { cidadeId_nome: { cidadeId: cidade.id, nome: NOME_ORGAO } },
+    update: {},
+    create: { nome: NOME_ORGAO, sigla: "SSU", cidadeId: cidade.id },
+  });
+
+  const email = process.env.SEED_ORGAO_EMAIL ?? "orgao@urbangrid.local";
+  const senha = process.env.SEED_ORGAO_SENHA ?? "orgao123";
+  const senhaHash = await bcrypt.hash(senha, 10);
+
+  await prisma.user.upsert({
+    where: { email },
+    update: { senhaHash, papel: "ORGAO", orgaoId: orgao.id },
+    create: {
+      email,
+      name: `Representante (demo) - ${NOME_ORGAO}`,
+      senhaHash,
+      papel: "ORGAO",
+      orgaoId: orgao.id,
+      nivelVerificacao: "EMAIL",
+    },
+  });
+
+  console.log(`Órgão demo: ${NOME_ORGAO} (${cidade.nome}) e usuário ${email} prontos.`);
+}
+
 async function main() {
   await seedGeografia();
   await seedCategorias();
   await seedAdmin();
+  await seedOrgaoDemo();
 }
 
 main()

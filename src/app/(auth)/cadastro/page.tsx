@@ -1,76 +1,25 @@
-"use client";
+import { CadastroTipoSwitch } from "@/components/cadastro-tipo-switch";
 
-import { useActionState } from "react";
-import Link from "next/link";
-
-import { cadastrar } from "./actions";
-
-export default function CadastroPage() {
-  const [state, action, pending] = useActionState(cadastrar, undefined);
+export default async function CadastroPage({
+  searchParams,
+}: PageProps<"/cadastro">) {
+  const { tipo } = await searchParams;
+  const tipoInicial = tipo === "orgao" ? "orgao" : "pessoa";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">Criar conta</h1>
+    <main className="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-8">
+      <div
+        aria-hidden
+        className="animate-grid-drift bg-dot-grid pointer-events-none absolute inset-0 -z-20"
+      />
+      <div
+        aria-hidden
+        className="animate-float pointer-events-none absolute left-1/2 top-0 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl dark:bg-blue-500/10"
+      />
 
-      <form action={action} className="flex w-full max-w-sm flex-col gap-3">
-        <input
-          type="text"
-          name="nome"
-          placeholder="Nome completo"
-          className="rounded border px-3 py-2"
-        />
-        {state?.erros?.nome && (
-          <p className="text-sm text-red-600">{state.erros.nome[0]}</p>
-        )}
-
-        <input
-          type="email"
-          name="email"
-          placeholder="E-mail"
-          className="rounded border px-3 py-2"
-        />
-        {state?.erros?.email && (
-          <p className="text-sm text-red-600">{state.erros.email[0]}</p>
-        )}
-
-        <input
-          type="password"
-          name="senha"
-          placeholder="Senha"
-          className="rounded border px-3 py-2"
-        />
-        {state?.erros?.senha && (
-          <p className="text-sm text-red-600">{state.erros.senha[0]}</p>
-        )}
-
-        <input
-          type="password"
-          name="confirmarSenha"
-          placeholder="Confirmar senha"
-          className="rounded border px-3 py-2"
-        />
-        {state?.erros?.confirmarSenha && (
-          <p className="text-sm text-red-600">
-            {state.erros.confirmarSenha[0]}
-          </p>
-        )}
-
-        {state?.mensagem && (
-          <p className="text-sm text-red-600">{state.mensagem}</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
-          Criar conta
-        </button>
-      </form>
-
-      <Link href="/login" className="text-sm underline">
-        Já tem conta? Entrar
-      </Link>
+      <div className="animate-fade-in flex w-full max-w-sm flex-col items-center gap-6">
+        <CadastroTipoSwitch tipoInicial={tipoInicial} />
+      </div>
     </main>
   );
 }

@@ -6,6 +6,7 @@ declare module "next-auth" {
     user: DefaultSession["user"] & {
       id: string;
       papel: Papel;
+      orgaoId: string | null;
     };
   }
 }
@@ -13,5 +14,6 @@ declare module "next-auth" {
 declare module "@auth/core/jwt" {
   interface JWT {
     papel?: Papel;
+    orgaoId?: string | null;
   }
 }

@@ -1,45 +1,75 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState } from "react";
+
+import { botaoPrimario, campoInput, cartaoDestaque, linkSutil } from "@/lib/estilos";
 
 import { login } from "./actions";
 
-export default async function LoginPage({
-  searchParams,
-}: PageProps<"/login">) {
-  const { erro } = await searchParams;
+export default function LoginPage() {
+  const [state, action, pending] = useActionState(login, undefined);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">Entrar</h1>
+    <main className="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-8">
+      <div
+        aria-hidden
+        className="animate-grid-drift bg-dot-grid pointer-events-none absolute inset-0 -z-20"
+      />
+      <div
+        aria-hidden
+        className="animate-float pointer-events-none absolute left-1/2 top-0 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl dark:bg-blue-500/10"
+      />
 
-      <form action={login} className="flex w-full max-w-sm flex-col gap-3">
-        <input
-          type="email"
-          name="email"
-          placeholder="E-mail"
-          required
-          className="rounded border px-3 py-2"
-        />
-        <input
-          type="password"
-          name="senha"
-          placeholder="Senha"
-          required
-          className="rounded border px-3 py-2"
-        />
-        {erro && (
-          <p className="text-sm text-red-600">E-mail ou senha inválidos.</p>
-        )}
-        <button
-          type="submit"
-          className="rounded bg-black px-3 py-2 text-white"
-        >
+      <div className="animate-fade-in flex w-full max-w-sm flex-col items-center gap-6">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Entrar
-        </button>
-      </form>
+        </h1>
 
-      <Link href="/cadastro" className="text-sm underline">
-        Ainda não tem conta? Cadastre-se
-      </Link>
+        <form action={action} className={`flex flex-col gap-3 ${cartaoDestaque}`}>
+          <input
+            type="text"
+            name="identificador"
+            placeholder="E-mail ou CPF"
+            defaultValue={state?.identificador ?? ""}
+            required
+            className={campoInput}
+          />
+          <input
+            type="password"
+            name="senha"
+            placeholder="Senha"
+            required
+            className={campoInput}
+          />
+          {state?.etapaTotp && (
+            <input
+              type="text"
+              name="codigoTotp"
+              inputMode="numeric"
+              placeholder="Código do autenticador (ou código de backup)"
+              autoFocus
+              className={campoInput}
+            />
+          )}
+          {state?.erro && <p className="text-sm text-red-600 dark:text-red-400">{state.erro}</p>}
+          <button type="submit" disabled={pending} className={botaoPrimario}>
+            Entrar
+          </button>
+
+          <div className="mt-1 flex flex-col items-center gap-1 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <Link href="/cadastro" className={linkSutil}>
+              Ainda não tem conta? <span className="font-semibold">Cadastre-se</span>
+            </Link>
+            <Link
+              href="/cadastro?tipo=orgao"
+              className="text-xs text-slate-400 transition-colors hover:text-primary dark:text-slate-500 dark:hover:text-blue-400"
+            >
+              É um órgão público? Solicite acesso
+            </Link>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }
