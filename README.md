@@ -452,6 +452,7 @@ Como a plataforma lida com reclamações sobre a cidade — incluindo, indiretam
 ### Segurança de aplicação
 
 - Acesso a banco de dados é 100% via Prisma (query builder parametrizado) — não há SQL bruto em nenhum ponto do código, então injeção de SQL não é uma superfície de ataque válida aqui.
+- Cada página de admin, moderação e do painel de órgão já verifica o papel do usuário no próprio server component (sem layout compartilhado); `src/proxy.ts` é uma camada extra de defesa em profundidade que barra por papel antes mesmo da página carregar, cobrindo o caso de uma página nova esquecer de chamar seu guard. Não substitui a checagem de cada server action — o próprio código do Next avisa que uma Server Function é só um POST pra rota onde ela é usada, então a checagem tem que valer por si só também.
 - Bloqueio temporário por força bruta de senha (`loginTentativasFalhas`/`loginBloqueadoAte` no `User`, 5 tentativas / 15 min), independente do bloqueio já existente para código TOTP.
 - Limite de solicitações por IP/hora em endpoints públicos e não autenticados que gravam no banco (cadastro de conta, solicitação de acesso de órgão).
 - Todo campo de texto livre em formulários tem tamanho máximo validado via Zod (não só mínimo) — evita payloads desproporcionais e custo desnecessário com a API de IA.
