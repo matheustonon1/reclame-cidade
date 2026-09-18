@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { excedeuLimitePorIp } from "@/lib/rateLimitMemoria";
 
 interface RespostaViaCep {
   erro?: boolean;
@@ -9,11 +10,22 @@ interface RespostaViaCep {
   ibge?: string;
 }
 
+const LIMITE_CONSULTAS_POR_IP_MINUTO = 20;
+
 export async function GET(request: NextRequest) {
   const cep = (request.nextUrl.searchParams.get("cep") ?? "").replace(/\D/g, "");
 
   if (!/^\d{8}$/.test(cep)) {
     return NextResponse.json({ erro: true }, { status: 400 });
+  }
+
+  // Endpoint público e não autenticado que faz proxy pro ViaCEP (serviço
+  // externo) - sem limite, alguém poderia martelar essa rota e usar o
+  // servidor como proxy anônimo, ou fazer o IP do próprio servidor ser
+  // bloqueado pelo ViaCEP por abuso.
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  if (excedeuLimitePorIp("cep", ip, LIMITE_CONSULTAS_POR_IP_MINUTO, 60_000)) {
+    return NextResponse.json({ erro: true }, { status: 429 });
   }
 
   let dados: RespostaViaCep;
