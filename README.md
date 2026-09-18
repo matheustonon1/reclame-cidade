@@ -229,10 +229,23 @@ npx prisma generate                  # regenera o client após alterar o schema
 Os testes em `e2e/` exercitam fluxos completos pelo navegador contra um
 servidor real (não usam mocks) - cadastro/login, bloqueio por força
 bruta, ciclo completo do 2FA, órgão restrito por categoria, recurso
-contra rejeição e o onboarding de órgão de ponta a ponta. Cada teste
-cria seus próprios dados (usuários com e-mail prefixado `e2e-teste-*`,
-reclamações com protocolo prefixado) e limpa tudo ao final, então é
-seguro rodar contra o banco de desenvolvimento normal.
+contra rejeição, onboarding de órgão de ponta a ponta, denúncia/banimento,
+avaliação de resolução, exclusão de conta e confirmação ("também sofro
+com isso"). Cada teste cria seus próprios dados (usuários com e-mail
+prefixado `e2e-teste-*`, reclamações com protocolo prefixado) e limpa
+tudo ao final, então é seguro rodar contra o banco de desenvolvimento
+normal.
+
+Nenhum teste passa pelo fluxo real de criação de reclamação com upload
+de imagem (usam `criarReclamacaoTeste()`, direto no banco) - isso evitaria
+chamar a API do Gemini e o Vercel Blob de verdade a cada execução.
+
+**Se `NEXT_PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` estiverem
+configuradas no `.env`**, os testes de cadastro em `auth.spec.ts` falham:
+a Cloudflare bloqueia corretamente o navegador automatizado do Playwright
+(é o antifake funcionando como deveria). Pra rodar a suíte completa,
+comente essas duas variáveis no `.env` antes e reinicie o `npm run dev`
+- descomente depois pra voltar a testar o widget manualmente.
 
 Pré-requisitos (o Playwright não sobe nada disso sozinho):
 
@@ -379,6 +392,9 @@ Existe um arquivo `prisma.config.ts` na raiz do projeto, resíduo de uma versão
 
 **Erro de tipo após alterar o `schema.prisma`**
 O Prisma Client precisa ser regenerado: `npx prisma generate`.
+
+**Teste E2E de cadastro trava/falha com "Não foi possível confirmar que você não é um robô"**
+O Turnstile está configurado no `.env` e bloqueou corretamente o navegador automatizado do Playwright. Comente `NEXT_PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`, reinicie o `npm run dev` e rode os testes de novo (ver "Testes end-to-end" acima).
 
 ---
 
