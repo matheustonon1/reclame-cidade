@@ -1,20 +1,32 @@
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, cartao, containerPagina } from "@/lib/estilos";
 
 import { exigirAdmin } from "../solicitacoes-orgao/exigir-admin";
 import { atualizarCategoriasOrgao } from "./actions";
 
-export default async function OrgaosCategoriasPage() {
+export default async function OrgaosCategoriasPage({
+  searchParams,
+}: PageProps<"/orgaos-categorias">) {
   await exigirAdmin();
 
-  const [orgaos, categorias] = await Promise.all([
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { ativo: true };
+
+  const [orgaos, totalOrgaos, categorias] = await Promise.all([
     prisma.orgao.findMany({
-      where: { ativo: true },
+      where: filtro,
       orderBy: { nome: "asc" },
       include: { cidade: true, categorias: { select: { id: true } } },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
     }),
+    prisma.orgao.count({ where: filtro }),
     prisma.categoria.findMany({ where: { ativa: true }, orderBy: { ordem: "asc" } }),
   ]);
+  const totalPaginas = calcularTotalPaginas(totalOrgaos);
 
   return (
     <main className={containerPagina}>
@@ -71,6 +83,12 @@ export default async function OrgaosCategoriasPage() {
           </button>
         </form>
       ))}
+
+      <Paginacao
+        paginaAtual={paginaAtual}
+        totalPaginas={totalPaginas}
+        basePath="/orgaos-categorias"
+      />
     </main>
   );
 }

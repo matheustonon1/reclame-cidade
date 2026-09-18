@@ -1,18 +1,32 @@
 import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, botaoSecundario, cartao, containerPagina } from "@/lib/estilos";
 
 import { aprovarComentarioReprovado, confirmarRejeicaoComentario } from "./actions";
 import { exigirModerador } from "../exigir-moderador";
 
-export default async function ModeracaoComentariosPage() {
+export default async function ModeracaoComentariosPage({
+  searchParams,
+}: PageProps<"/moderacao/comentarios">) {
   await exigirModerador();
 
-  const logsPendentes = await prisma.logModeracao.findMany({
-    where: { alvoTipo: "COMENTARIO", decisao: "REPROVAR", revisadoEm: null },
-    orderBy: { createdAt: "asc" },
-  });
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { alvoTipo: "COMENTARIO" as const, decisao: "REPROVAR" as const, revisadoEm: null };
+
+  const [logsPendentes, totalPendentes] = await Promise.all([
+    prisma.logModeracao.findMany({
+      where: filtro,
+      orderBy: { createdAt: "asc" },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
+    }),
+    prisma.logModeracao.count({ where: filtro }),
+  ]);
+  const totalPaginas = calcularTotalPaginas(totalPendentes);
 
   const comentarios = logsPendentes.length
     ? await prisma.comentario.findMany({
@@ -102,6 +116,12 @@ export default async function ModeracaoComentariosPage() {
           </div>
         );
       })}
+
+      <Paginacao
+        paginaAtual={paginaAtual}
+        totalPaginas={totalPaginas}
+        basePath="/moderacao/comentarios"
+      />
     </main>
   );
 }

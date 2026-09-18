@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { botaoPrimario, botaoSecundario, campoInput, cartao, containerPagina } from "@/lib/estilos";
 
 import { aprovarSolicitacao, rejeitarSolicitacao } from "./actions";
@@ -16,22 +18,36 @@ const STATUS_COR: Record<string, string> = {
   REJEITADA: "text-red-700 dark:text-red-400",
 };
 
-export default async function SolicitacoesOrgaoPage() {
+export default async function SolicitacoesOrgaoPage({
+  searchParams,
+}: PageProps<"/solicitacoes-orgao">) {
   await exigirAdmin();
 
-  const [pendentes, decididasRecentemente] = await Promise.all([
+  const { pagePendentes, pageDecididas } = await searchParams;
+  const paginaPendentes = lerPaginaAtual(pagePendentes);
+  const paginaDecididas = lerPaginaAtual(pageDecididas);
+  const filtroDecididas = { status: { not: "PENDENTE" as const } };
+
+  const [pendentes, totalPendentes, decididasRecentemente, totalDecididas] = await Promise.all([
     prisma.solicitacaoOrgao.findMany({
       where: { status: "PENDENTE" },
       orderBy: { createdAt: "asc" },
       include: { cidade: { include: { estado: true } } },
+      skip: calcularSkip(paginaPendentes),
+      take: ITENS_POR_PAGINA,
     }),
+    prisma.solicitacaoOrgao.count({ where: { status: "PENDENTE" } }),
     prisma.solicitacaoOrgao.findMany({
-      where: { status: { not: "PENDENTE" } },
+      where: filtroDecididas,
       orderBy: { analisadoEm: "desc" },
-      take: 15,
+      skip: calcularSkip(paginaDecididas),
+      take: ITENS_POR_PAGINA,
       include: { cidade: true, analisadoPor: true },
     }),
+    prisma.solicitacaoOrgao.count({ where: filtroDecididas }),
   ]);
+  const totalPaginasPendentes = calcularTotalPaginas(totalPendentes);
+  const totalPaginasDecididas = calcularTotalPaginas(totalDecididas);
 
   return (
     <main className={`${containerPagina} max-w-3xl`}>
@@ -94,10 +110,20 @@ export default async function SolicitacoesOrgaoPage() {
         </div>
       ))}
 
+      <Paginacao
+        paginaAtual={paginaPendentes}
+        totalPaginas={totalPaginasPendentes}
+        basePath="/solicitacoes-orgao"
+        paramName="pagePendentes"
+        searchParams={{
+          pageDecididas: typeof pageDecididas === "string" ? pageDecididas : undefined,
+        }}
+      />
+
       {decididasRecentemente.length > 0 && (
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Decididas recentemente
+            Decididas recentemente {totalDecididas > 0 && `(${totalDecididas})`}
           </h2>
           {decididasRecentemente.map((solicitacao) => (
             <div key={solicitacao.id} className={`flex flex-col gap-1 ${cartao}`}>
@@ -122,6 +148,16 @@ export default async function SolicitacoesOrgaoPage() {
               )}
             </div>
           ))}
+
+          <Paginacao
+            paginaAtual={paginaDecididas}
+            totalPaginas={totalPaginasDecididas}
+            basePath="/solicitacoes-orgao"
+            paramName="pageDecididas"
+            searchParams={{
+              pagePendentes: typeof pagePendentes === "string" ? pagePendentes : undefined,
+            }}
+          />
         </div>
       )}
 

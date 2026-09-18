@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
+import { Paginacao } from "@/components/paginacao";
+import { calcularSkip, calcularTotalPaginas, ITENS_POR_PAGINA, lerPaginaAtual } from "@/lib/paginacao";
 import { containerPagina, cartao } from "@/lib/estilos";
 
 import { exigirModerador } from "../../exigir-moderador";
-
-const LIMITE = 100;
 
 const DECISAO_ESTILO: Record<string, string> = {
   APROVAR: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400",
@@ -17,15 +17,26 @@ const DECISAO_LABEL: Record<string, string> = {
   REPROVAR: "Reprovado",
 };
 
-export default async function HistoricoModeracaoComentariosPage() {
+export default async function HistoricoModeracaoComentariosPage({
+  searchParams,
+}: PageProps<"/moderacao/historico/comentarios">) {
   await exigirModerador();
 
-  const logs = await prisma.logModeracao.findMany({
-    where: { alvoTipo: "COMENTARIO" },
-    orderBy: { createdAt: "desc" },
-    take: LIMITE,
-    include: { revisadoPor: true },
-  });
+  const { page } = await searchParams;
+  const paginaAtual = lerPaginaAtual(page);
+  const filtro = { alvoTipo: "COMENTARIO" as const };
+
+  const [logs, totalLogs] = await Promise.all([
+    prisma.logModeracao.findMany({
+      where: filtro,
+      orderBy: { createdAt: "desc" },
+      skip: calcularSkip(paginaAtual),
+      take: ITENS_POR_PAGINA,
+      include: { revisadoPor: true },
+    }),
+    prisma.logModeracao.count({ where: filtro }),
+  ]);
+  const totalPaginas = calcularTotalPaginas(totalLogs);
 
   const comentarios = logs.length
     ? await prisma.comentario.findMany({
@@ -46,7 +57,8 @@ export default async function HistoricoModeracaoComentariosPage() {
         </Link>
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">
-        Últimas {LIMITE} decisões automáticas e humanas, mais recentes primeiro.
+        Decisões automáticas e humanas, mais recentes primeiro
+        {totalLogs > 0 && ` (${totalLogs})`}.
       </p>
 
       {logs.length === 0 && (
@@ -111,6 +123,12 @@ export default async function HistoricoModeracaoComentariosPage() {
           </div>
         );
       })}
+
+      <Paginacao
+        paginaAtual={paginaAtual}
+        totalPaginas={totalPaginas}
+        basePath="/moderacao/historico/comentarios"
+      />
     </main>
   );
 }
